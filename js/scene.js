@@ -34,6 +34,9 @@ export function initScene(canvas) {
 
   transform = new TransformControls(camera, renderer.domElement);
   transform.addEventListener('dragging-changed', (e) => { controls.enabled = !e.value; });
+  // v0.8: el gizmo dispara 'change' en cada traslación, rotación
+  // o escala; ahí se sincroniza el BoxHelper en tiempo real.
+  transform.addEventListener('change', () => { syncSelectionHelper(); });
   scene.add(transform);
 
   const ray = new THREE.Raycaster();
@@ -47,7 +50,14 @@ export function initScene(canvas) {
     // del THREE.Mesh hijo interceptado, no del Group padre. En un
     // .glb, hits[0].object ya es la sub-malla tocada.
     const hits = ray.intersectObjects(state.objects, true);
-    if (!hits.length) return;
+    if (!hits.length) {
+      // v0.8: clic en el fondo = deselección, con limpieza del
+      // BoxHelper en select(null). No se deselecciona mientras el
+      // gizmo está siendo arrastrado (su propio pointerdown corre
+      // antes que este y ya marcó transform.dragging).
+      if (!transform.dragging) select(null);
+      return;
+    }
     const hit = hits[0].object;
     if (hit.isMesh) select(hit);
     else {
@@ -136,25 +146,58 @@ export function normalizeAndFrame(obj, { targetSize = 2, fill = 0.8 } = {}) {
     camera.position.copy(finalCenter).add(direction.multiplyScalar(distance));
     controls.update();
   }
+  // v0.8: el BoxHelper que llega a pantalla es siempre el
+  // post-normalización. register() crea uno transitorio al
+  // seleccionar, pero normalizeAndFrame() lo recrea aquí, en el
+  // mismo tick síncrono y antes del siguiente render, así que el
+  // usuario nunca ve una caja con la escala o el centro viejos.
+  if (state.selected) refreshSelectionHelper();
   return { dimensions: finalSize, center: finalCenter, radius: sphere.radius, distance };
+}
+
+// v0.8: ciclo de vida robusto del BoxHelper.
+// - disposeSelectionHelper: removeFromParent() + dispose() de
+//   geometría y material, para no dejar cajas fantasma ni fugas.
+// - createSelectionHelper: destruye el anterior y crea el nuevo.
+// - refreshSelectionHelper: recrea el helper de la selección
+//   actual con sus matrices finales (tras normalizeAndFrame).
+// - syncSelectionHelper: helper.update() en cada frame y en cada
+//   evento 'change' del gizmo, para que siga a la malla en vivo.
+export function disposeSelectionHelper() {
+  if (!selectionHelper) return;
+  selectionHelper.removeFromParent();
+  selectionHelper.geometry?.dispose?.();
+  selectionHelper.material?.dispose?.();
+  selectionHelper = null;
+}
+
+export function createSelectionHelper(obj) {
+  disposeSelectionHelper();
+  if (!obj || !scene) return null;
+  selectionHelper = new THREE.BoxHelper(obj, 0xff2e88);
+  scene.add(selectionHelper);
+  return selectionHelper;
+}
+
+export function refreshSelectionHelper() {
+  if (!state.selected) return null;
+  return createSelectionHelper(state.selected);
+}
+
+export function syncSelectionHelper() {
+  if (selectionHelper) selectionHelper.update();
 }
 
 export function select(obj) {
   state.selected = obj;
   if (obj) transform.attach(obj);
   else transform.detach();
-  // v0.7: BoxHelper temporal magenta para la selección, nunca
-  // registrado en state.objects, así que no aparece en el
+  // v0.7/v0.8: BoxHelper temporal magenta para la selección,
+  // nunca registrado en state.objects, así que no aparece en el
   // Outliner ni se puede raycastear como objeto interactivo.
-  if (selectionHelper) {
-    scene.remove(selectionHelper);
-    selectionHelper.geometry?.dispose?.();
-    selectionHelper = null;
-  }
-  if (obj) {
-    selectionHelper = new THREE.BoxHelper(obj, 0xff2e88);
-    scene.add(selectionHelper);
-  }
+  // Cambiar de nodo o deseleccionar destruye el anterior.
+  if (obj) createSelectionHelper(obj);
+  else disposeSelectionHelper();
   const el = document.getElementById('selName');
   if (el) el.textContent = obj ? obj.name + ' (' + obj.type + ')' : 'Ninguno';
   // v0.7: el inspector refleja los valores actuales de la malla

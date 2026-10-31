@@ -1,4 +1,4 @@
-# Estudio 3D — v0.7 Outliner
+# Estudio 3D — v0.8 BoxHelper
 
 ## Arquitectura
 
@@ -6,8 +6,9 @@ La v0.1 monolítica quedó guardada en local como `index-v01.html` (no se sube a
 La v0.2 separó la lógica en módulos ES6, la v0.3 añadió el pipeline gratuito,
 la v0.4 es la revisión QA que repara su integración, la v0.5 añade
 autenticación segura con token de Hugging Face, la v0.6 añade
-post-procesamiento espacial para las mallas inyectadas y la v0.7
-añade Outliner e inspector de materiales granular:
+post-procesamiento espacial para las mallas inyectadas, la v0.7
+añade Outliner e inspector de materiales granular y la v0.8
+sincroniza dinámicamente el BoxHelper de selección:
 
 ```
 index.html        # Solo estructura y paneles
@@ -28,6 +29,40 @@ test/test-v05.mjs # Test Node de la v0.5 (password, localStorage, hf_token)
 test/test-v06.mjs # Test Node de la v0.6 (Box3, eje 2, encuadre FOV 80%)
 js/outliner.js    # Árbol de jerarquía, excluye helpers/grillas (v0.7)
 test/test-v07.mjs # Test Node de la v0.7 (Outliner, Mesh hijo, no destructivo)
+test/test-v08.mjs # Test Node de la v0.8 (refresh, sync, cleanup)
+```
+
+## v0.8 BoxHelper: sincronización dinámica de matrices
+
+La v0.7 dejaba el BoxHelper creado en `select()` antes de
+`normalizeAndFrame()`, por eso quedaba con la escala y el centro
+viejos y no se veía bien en Pages. La v0.8 lo corrige:
+
+- Instanciación post-normalización: `normalizeAndFrame()` recrea
+  el helper al final (`refreshSelectionHelper()`), en el mismo
+  tick síncrono y antes del siguiente render, así que el helper
+  que llega a pantalla ya usa las matrices finales. Lo mismo
+  ocurre para modelos importados y generados, porque ambos pasan
+  por `normalizeAndFrame()`.
+- Sincronización basada en eventos: `helper.update()` enlazado
+  al evento `change` de TransformControls (gizmo) y, además, en
+  cada frame del bucle de animación (`syncSelectionHelper()` en
+  `main.js`), para que el recuadro siga a la malla al trasladar,
+  rotar o escalar en tiempo real.
+- Cleanup: `disposeSelectionHelper()` hace `removeFromParent()`
+  y `dispose()` de geometría y material. Se llama al cambiar de
+  nodo, al deseleccionar y al eliminar. Clic en el fondo ahora
+  deselecciona (`select(null)`), salvo mientras el gizmo está
+  siendo arrastrado (`transform.dragging`), para no romper el
+  arrastre.
+- Prueba local con Three real y el GLB compuesto: helper
+  pre-normalización 3.40, obsoleto tras normalizar sigue 3.40,
+  tras refresh 2.00 x 0.59 x 0.59 exacto; HijoA movido y escalado
+  con el gizmo simulado: sin `update()` el helper queda en
+  -0.71, con `update()` sigue al centro real 0.47 y al ancho
+  1.18, HijoB intacto en 0.71, y tras cleanup quedan 0 BoxHelper
+  en la escena.
+```
 test/composite-2-meshes.glb # GLB local, 2 mallas (HijoA 0.5 / HijoB 0.2), solo local, no se sube por ser binario
 ```
 
