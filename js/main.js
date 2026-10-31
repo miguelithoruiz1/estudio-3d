@@ -2,6 +2,7 @@ import * as THREE from 'three';
 import { initScene, renderer, scene, camera, controls, resize, syncSelectionHelper } from './scene.js';
 import { state, log } from './store.js';
 import { initUI } from './ui.js';
+import { initVFX, renderVFX, syncVFXSize, isVFXReady, getBloomState } from './vfx.js';
 import { updateEffects, addPrimitive } from './effects.js';
 import { updateTracks } from './timeline.js';
 
@@ -10,9 +11,18 @@ function start() {
     const canvas = document.getElementById('viewport');
     if (!canvas) throw new Error('No se encontró el canvas #viewport.');
     initScene(canvas);
+    // v0.11: post-procesamiento no fatal: si los módulos de
+    // postprocessing fallan al cargar, la app sigue con render
+    // directo y el panel VFX queda inactivo, sin romper el inicio.
+    try {
+      initVFX(renderer, scene, camera);
+    } catch (vfxErr) {
+      console.warn('VFX no disponible, render directo:', vfxErr);
+    }
     initUI();
-    new ResizeObserver(resize).observe(canvas.parentElement);
+    new ResizeObserver(() => { resize(); syncVFXSize(); }).observe(canvas.parentElement);
     resize();
+    syncVFXSize();
 
     const clock = new THREE.Clock();
     function animate() {
@@ -25,13 +35,17 @@ function start() {
       // v0.8: sincronización por frame del BoxHelper, además del
       // evento 'change' del gizmo, para que siga a la malla en vivo.
       syncSelectionHelper();
-      renderer.render(scene, camera);
+      // v0.11: el bucle ya no usa renderer.render() directo:
+      // renderVFX() llama a composer.render() (RenderPass +
+      // UnrealBloomPass + OutputPass) y, solo si el compositor
+      // no se pudo inicializar, cae a renderer.render().
+      renderVFX(renderer, scene, camera);
     }
 
     addPrimitive('box');
     state.objects[state.objects.length - 1].name = 'Cubo inicial';
     updateTracks();
-    log('Listo v0.10. Añade objetos, importa un modelo o genera uno gratis con Hugging Face (necesita tu token Read, guardado solo en tu navegador).');
+    log('Listo v0.11' + (isVFXReady() ? ` (Bloom ${getBloomState().enabled ? 'activo' : 'inactivo'}, strength ${getBloomState().strength}).` : ' (VFX no disponible, render directo).') + ' Añade objetos, importa un modelo o genera uno gratis con Hugging Face (necesita tu token Read, guardado solo en tu navegador).');
     window.__estudioReady = true;
     animate();
   } catch (err) {

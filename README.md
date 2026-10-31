@@ -1,4 +1,4 @@
-# Estudio 3D — v0.10 Render
+# Estudio 3D — v0.11 VFX
 
 ## Arquitectura
 
@@ -9,7 +9,8 @@ autenticación segura con token de Hugging Face, la v0.6 añade
 post-procesamiento espacial para las mallas inyectadas, la v0.7
 añade Outliner e inspector de materiales granular, la v0.8
 sincroniza dinámicamente el BoxHelper de selección, la v0.9
-añade iluminación HDRI (IBL) y la v0.10 añade render final PNG:
+añade iluminación HDRI (IBL), la v0.10 añade render final PNG
+y la v0.11 añade post-procesamiento VFX con Bloom:
 
 ```
 index.html        # Solo estructura y paneles
@@ -35,6 +36,50 @@ js/environment.js # HDRI: RGBELoader + PMREM, toggle fondo, dispose VRAM (v0.9)
 test/test-v09.mjs # Test Node de la v0.9 (RGBELoader, PMREM, toggle, dispose)
 js/snapshot.js    # Render final PNG: supersampling 2x/4x, alfa, restaurar (v0.10)
 test/test-v10.mjs # Test Node de la v0.10 (botón, alfa, supersampling, restaurar)
+js/vfx.js       # Post-procesamiento: EffectComposer + Bloom + OutputPass (v0.11)
+test/test-v11.mjs # Test Node de la v0.11 (composer, Bloom, panel VFX, Snapshot Sync)
+```
+
+## v0.11 VFX: post-procesamiento con Bloom, sin romper el snapshot
+
+- Nuevo `js/vfx.js`: `EffectComposer` con `RenderPass` base,
+  `UnrealBloomPass` sutil (`threshold 0.8, strength 0.3,
+  radius 0.5`; el constructor es (resolución, strength, radius,
+  threshold)) y `OutputPass` al final. El OutputPass es necesario
+  aunque el encargo solo pedía RenderPass + Bloom: sin él,
+  renderizar a un render target perdería el tone mapping ACES y
+  la conversión sRGB que `renderer.render()` aplica a pantalla,
+  y el pipeline PBR cambiaría de tono al activar VFX.
+- El bucle principal en `main.js` ya no usa `renderer.render()`
+  directo: usa `renderVFX()`, que llama a `composer.render()`.
+  Si `initVFX()` falla (por ejemplo, un módulo de postprocessing
+  no carga), la app no se rompe: cae a `renderer.render()`
+  directo y el panel VFX queda marcado como no disponible.
+- Panel "Efectos Visuales (Post-Procesamiento)": checkbox para
+  activar/desactivar el Bloom (`bloomPass.enabled`) y slider de
+  intensidad (`strength`, 0 a 2, paso 0.05, por defecto 0.3),
+  con estado visible en `#vfxStatus`. Con el Bloom desactivado,
+  la cadena sigue siendo RenderPass + OutputPass, con el mismo
+  tono PBR.
+- Snapshot Sync: `snapshot.js` usa `renderVFX()` y `syncVFXSize()`
+  cuando el compositor está listo, así que la captura 2x/4x
+  llama a `composer.render()` (no a `renderer.render()`) antes
+  de extraer el PNG, y el Bloom se imprime en la imagen final.
+  El registro del render ahora indica la vía (`vía composer` o
+  `vía renderer`). El tamaño del compositor se sincroniza con
+  el tamaño supersampling antes del render y se restaura al
+  tamaño original en `finally`, igual que el renderer.
+- Prueba local: secuencia verificada con un compositor simulado
+  (sin WebGL, sin GPU): threshold 0.8 discrimina un metal
+  brillante (brillo 1.2, pasa) de un mate oscuro (0.2, no pasa),
+  el slider cambia strength 0.3 -> 0.8, el toggle desactiva el
+  Bloom sin dejar de renderizar por el compositor, y el snapshot
+  2x usa `composer.render()` con 0 renders directos. Límite
+  honesto: la caída de FPS real no se puede medir en Node sin
+  GPU; el bucle simulado hace 1 render por frame, sin trabajo
+  extra por frame, y la fluidez real con Bloom queda para la
+  prueba en Pages y en el equipo del usuario.
+```
 ```
 
 ## v0.10 Render: snapshot PNG de alta resolución

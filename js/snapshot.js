@@ -21,6 +21,15 @@
 
 import * as THREE from 'three';
 import { renderer, scene, camera, gridHelper } from './scene.js';
+import { renderVFX, isVFXReady, syncVFXSize } from './vfx.js';
+
+// v0.11 Snapshot Sync: si el post-procesamiento está activo
+// (compositor inicializado), la captura usa composer.render()
+// en lugar de renderer.render(), para que el Bloom se imprima
+// en el PNG final. Si el compositor no existe, cae a
+// renderer.render() como en v0.10. En ambos casos, el tamaño
+// del compositor se sincroniza con el tamaño supersampling
+// antes del render y se restaura al tamaño original en finally.
 
 export function renderSnapshot({ scale = 2, transparent = false } = {}) {
   if (!renderer || !scene || !camera) throw new Error('La escena aún no está inicializada.');
@@ -43,13 +52,20 @@ export function renderSnapshot({ scale = 2, transparent = false } = {}) {
     renderer.setSize(w, h, false);
     camera.aspect = w / h;
     camera.updateProjectionMatrix();
-    renderer.render(scene, camera);
+    // v0.11: con VFX activo, composer.render() imprime el Bloom
+    // en la imagen; sin VFX, renderer.render() directo.
+    if (isVFXReady()) {
+      syncVFXSize();
+      renderVFX(renderer, scene, camera);
+    } else {
+      renderer.render(scene, camera);
+    }
     const dataURL = canvas.toDataURL('image/png', 1.0);
     const a = document.createElement('a');
     a.href = dataURL;
     a.download = 'render_estudio3d.png';
     a.click();
-    return { dataURL, width: w, height: h, scale: factor, transparent };
+    return { dataURL, width: w, height: h, scale: factor, transparent, via: isVFXReady() ? 'composer' : 'renderer' };
   } finally {
     // Restauración inmediata, incluso si la captura falló.
     if (transparent) {
@@ -61,6 +77,11 @@ export function renderSnapshot({ scale = 2, transparent = false } = {}) {
     renderer.setSize(originalSize.x, originalSize.y, false);
     camera.aspect = originalAspect;
     camera.updateProjectionMatrix();
-    renderer.render(scene, camera);
+    if (isVFXReady()) {
+      syncVFXSize();
+      renderVFX(renderer, scene, camera);
+    } else {
+      renderer.render(scene, camera);
+    }
   }
 }

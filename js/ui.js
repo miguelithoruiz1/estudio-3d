@@ -10,6 +10,7 @@ import { getHfToken, saveHfToken, clearHfToken } from './hf-token.js';
 import { refreshOutliner } from './outliner.js';
 import { loadEnvironmentFile, setEnvironmentBackground } from './environment.js';
 import { renderSnapshot } from './snapshot.js';
+import { setBloomEnabled, setBloomStrength, getBloomState, isVFXReady } from './vfx.js';
 
 const $ = (id) => document.getElementById(id);
 // Enlace seguro: si falta un id, se deja constancia en #log en
@@ -77,13 +78,28 @@ export function initUI() {
   });
   bind('envBackground', 'change', (e) => { setEnvironmentBackground(e.target.checked); });
 
-  // --- Render Final (Snapshot PNG, v0.10) ---
+  // --- Efectos Visuales (VFX, v0.11) ---
+  const updateVfxStatus = () => {
+    const el = $('vfxStatus');
+    if (!el) return;
+    if (!isVFXReady()) {
+      el.textContent = 'VFX no disponible en este navegador: render directo, sin Bloom.';
+      return;
+    }
+    const s = getBloomState();
+    el.textContent = `Bloom ${s.enabled ? 'activo' : 'inactivo'}: strength ${s.strength}, threshold ${s.threshold}, radius ${s.radius}.`;
+  };
+  bind('vfxBloom', 'change', (e) => { setBloomEnabled(e.target.checked); updateVfxStatus(); });
+  bind('vfxBloomStrength', 'input', (e) => { setBloomStrength(e.target.value); updateVfxStatus(); });
+  updateVfxStatus();
+
+  // --- Render Final (Snapshot PNG, v0.10, con Snapshot Sync v0.11) ---
   bind('renderImage', 'click', () => {
     try {
       const scale = parseFloat($('renderScale')?.value || '2');
       const transparent = $('renderTransparent')?.checked || false;
       const result = renderSnapshot({ scale, transparent });
-      log(`Imagen renderizada: render_estudio3d.png (${result.scale}x, ${result.width}x${result.height}, fondo ${transparent ? 'transparente' : 'como en escena'}).`);
+      log(`Imagen renderizada: render_estudio3d.png (${result.scale}x, ${result.width}x${result.height}, fondo ${transparent ? 'transparente' : 'como en escena'}, vía ${result.via}).`);
     } catch (err) {
       log('Render: ' + (err?.message || err));
     }
