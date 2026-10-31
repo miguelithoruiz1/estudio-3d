@@ -3,16 +3,16 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Estudio 3D — v0.2 modular</title>
+<title>Estudio 3D — v0.3 gratuita HF</title>
 <link rel="stylesheet" href="styles.css">
 <script type="importmap">
-{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"}}
+{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/","@gradio/client":"https://cdn.jsdelivr.net/npm/@gradio/client/dist/index.min.js"}}
 </script>
 </head>
 <body>
 <header>
-<h1>Estudio 3D <span class="badge">v0.2 modular</span></h1>
-<p>Escena, interfaz, importación/exportación, IA y timeline separados en módulos ES6. Sin relieve 2D: ahora la generación es por API externa.</p>
+<h1>Estudio 3D <span class="badge">v0.3 gratuita HF</span></h1>
+<p>Escena, interfaz, importación/exportación, IA y timeline separados en módulos ES6. Sin relieve 2D: generación gratuita por Hugging Face Spaces, sin clave.</p>
 </header>
 <div class="layout">
 <aside>
@@ -35,7 +35,16 @@
 <button id="exportGLB">Exportar .glb</button><button id="exportOBJ">Exportar .obj</button>
 </div>
 
-<h2>Generar 3D con IA</h2>
+<h2>Generar 3D gratis (Hugging Face)</h2>
+<label>Espacio</label>
+<select id="hfSpace"><option value="sf3d">Stable Fast 3D (stabilityai)</option><option value="triposr">TripoSR (VAST-AI)</option></select>
+<label>Imagen JPG o PNG</label>
+<input type="file" id="hfImageFile" accept="image/jpeg,image/png,image/webp">
+<button id="generateFreeAI">Generar 3D gratis</button>
+<div id="hfStatus" class="small" style="display:none"><span class="spinner"></span> Generando malla 3D, esto puede tardar unos segundos...</div>
+<p class="small">Sin clave y sin créditos. El Space público es compartido: puede tardar más que unos segundos si hay cola, estar pausado o cambiar su API. Si Stable Fast 3D falla, se intenta TripoSR automáticamente. El .glb resultante se inyecta en (0, 0, 0).</p>
+
+<h2>Generar 3D con IA (de pago, opcional)</h2>
 <label>Proveedor</label>
 <select id="aiProvider"><option value="meshy">Meshy</option><option value="tripo">Tripo v3</option></select>
 <label>Clave de API (solo en esta sesión, no se guarda)</label>

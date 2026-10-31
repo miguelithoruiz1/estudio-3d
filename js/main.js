@@ -25,5 +25,5 @@ function animate() {
 addPrimitive('box');
 state.objects[state.objects.length - 1].name = 'Cubo inicial';
 updateTracks();
-log('Listo v0.2. Añade objetos, importa un modelo o genera uno con IA.');
+log('Listo v0.3. Añade objetos, importa un modelo o genera uno gratis con Hugging Face.');
 animate();

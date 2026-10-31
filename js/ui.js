@@ -1,10 +1,11 @@
 import * as THREE from 'three';
 import { state, setLogger, log } from './store.js';
 import { scene, renderer, register, setTransformMode, removeSelected, duplicateSelected, applyMaterial } from './scene.js';
-import { loadModelFile, exportGLB, exportOBJ, download } from './io.js';
+import { loadModelFile, exportGLB, exportOBJ, download } from './loaders.js';
 import { addPrimitive, addParticles, addTextMotion, addArm, setShoulder, setElbow, inflateSelected } from './effects.js';
 import { recordKeyframe, applyKeyframes, updateTracks, createVideoRecorder } from './timeline.js';
 import { generate3DFromImage } from './ai3d.js';
+import { generateFree3DFromImage } from './hf3d.js';
 
 const $ = (id) => document.getElementById(id);
 
@@ -52,7 +53,29 @@ export function initUI() {
   $('shoulder').oninput = (e) => setShoulder(+e.target.value);
   $('elbow').oninput = (e) => setElbow(+e.target.value);
 
-  // --- Pipeline IA (reemplaza al relieve 2D de la v0.1) ---
+  // --- Pipeline IA gratuito (Hugging Face, sin clave) ---
+  $('generateFreeAI').onclick = async () => {
+    const btn = $('generateFreeAI');
+    const status = $('hfStatus');
+    btn.disabled = true;
+    status.style.display = 'block';
+    try {
+      await generateFree3DFromImage({
+        file: $('hfImageFile').files[0] || null,
+        space: $('hfSpace').value,
+        onProgress: (msg) => { status.innerHTML = '<span class="spinner"></span> ' + msg; log(msg); },
+      });
+    } catch (err) {
+      log('IA gratuita: ' + err.message);
+      status.textContent = 'Error: ' + err.message;
+    } finally {
+      btn.disabled = false;
+      // El indicador se oculta en el siguiente intento; el texto
+      // queda visible como registro del último resultado.
+    }
+  };
+
+  // --- Pipeline IA de pago (opcional, v0.2) ---
   $('generateAI').onclick = async () => {
     const btn = $('generateAI');
     btn.disabled = true;

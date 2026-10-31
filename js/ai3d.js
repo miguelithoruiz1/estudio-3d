@@ -1,4 +1,4 @@
-import { loadGLBFromURL } from './io.js';
+import { loadGLBFromURL } from './loaders.js';
 import { log } from './store.js';
 
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
