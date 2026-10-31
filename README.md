@@ -1,4 +1,4 @@
-# Estudio 3D — v0.9 HDRI
+# Estudio 3D — v0.10 Render
 
 ## Arquitectura
 
@@ -8,8 +8,8 @@ la v0.4 es la revisión QA que repara su integración, la v0.5 añade
 autenticación segura con token de Hugging Face, la v0.6 añade
 post-procesamiento espacial para las mallas inyectadas, la v0.7
 añade Outliner e inspector de materiales granular, la v0.8
-sincroniza dinámicamente el BoxHelper de selección y la v0.9
-añade iluminación HDRI (IBL):
+sincroniza dinámicamente el BoxHelper de selección, la v0.9
+añade iluminación HDRI (IBL) y la v0.10 añade render final PNG:
 
 ```
 index.html        # Solo estructura y paneles
@@ -33,6 +33,38 @@ test/test-v07.mjs # Test Node de la v0.7 (Outliner, Mesh hijo, no destructivo)
 test/test-v08.mjs # Test Node de la v0.8 (refresh, sync, cleanup)
 js/environment.js # HDRI: RGBELoader + PMREM, toggle fondo, dispose VRAM (v0.9)
 test/test-v09.mjs # Test Node de la v0.9 (RGBELoader, PMREM, toggle, dispose)
+js/snapshot.js    # Render final PNG: supersampling 2x/4x, alfa, restaurar (v0.10)
+test/test-v10.mjs # Test Node de la v0.10 (botón, alfa, supersampling, restaurar)
+```
+
+## v0.10 Render: snapshot PNG de alta resolución
+
+- Botón "Renderizar Imagen (PNG)", selector de resolución 2x
+  (doble) o 4x (cuádruple) y checkbox "Fondo Transparente" en
+  el nuevo panel "Render Final".
+- El WebGLRenderer ya tenía `preserveDrawingBuffer:true` (sin
+  él, `toDataURL()` devuelve negro) y ahora además se instancia
+  con `alpha:true` para que el canal alfa sea extraíble.
+- `js/snapshot.js` sigue el orden exacto: guarda pixelRatio y
+  tamaño, aumenta temporalmente el tamaño al factor elegido,
+  fuerza `renderer.render(scene, camera)`, extrae
+  `canvas.toDataURL('image/png', 1.0)` y descarga
+  `render_estudio3d.png`, y restaura resolución, ratio, aspect
+  y vista en `finally`, para no asfixiar la GPU.
+- Canal alfa: si "Fondo Transparente" está marcado, se ocultan
+  temporalmente `scene.background` y la grilla (`gridHelper`,
+  ahora exportada desde `scene.js`) justo antes del render, con
+  `setClearAlpha(0)`, y se restauran al finalizar.
+  `scene.environment` no se toca nunca, así que la iluminación
+  PBR/IBL no cambia entre la vista normal y el snapshot.
+- Prueba local: secuencia verificada con un renderer simulado
+  (sin WebGL, que no hay en Node): 2x captura 1600x1200 y 4x
+  captura 3200x2400 desde 800x600, con fondo, grilla, clearAlpha
+  y resolución restaurados y environment intacto. Límite
+  honesto: la descarga real en un navegador con WebGL queda
+  para la prueba en Pages, porque en Node no hay GPU ni canvas
+  real.
+```
 test/test-env.hdr # HDR local 4x4 Radiance, solo local, no se sube por ser binario
 ```
 

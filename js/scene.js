@@ -4,13 +4,16 @@ import { TransformControls } from 'three/addons/controls/TransformControls.js';
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
 import { state, log, notifyObjectsChange } from './store.js';
 
-export let renderer, scene, camera, controls, transform;
+export let renderer, scene, camera, controls, transform, gridHelper;
 export let initialEnvironment = null;
 export const DARK_BACKGROUND = 0x0b0e14;
 let selectionHelper = null;
 
 export function initScene(canvas) {
-  renderer = new THREE.WebGLRenderer({ canvas, antialias: true, preserveDrawingBuffer: true });
+  // v0.10: preserveDrawingBuffer:true para que toDataURL() no
+  // devuelva una imagen negra, y alpha:true para que el canal
+  // alfa (fondo transparente) sea extraíble en el PNG.
+  renderer = new THREE.WebGLRenderer({ canvas, antialias: true, preserveDrawingBuffer: true, alpha: true });
   renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
   renderer.shadowMap.enabled = true;
   renderer.shadowMap.type = THREE.PCFSoftShadowMap;
@@ -30,7 +33,8 @@ export function initScene(canvas) {
   controls = new OrbitControls(camera, renderer.domElement);
   controls.target.set(0, 1, 0);
 
-  scene.add(new THREE.GridHelper(20, 20, 0x00e5ff, 0x243044));
+  gridHelper = new THREE.GridHelper(20, 20, 0x00e5ff, 0x243044);
+  scene.add(gridHelper);
   scene.add(new THREE.AmbientLight(0xffffff, 0.35));
   const dir = new THREE.DirectionalLight(0xffffff, 1.2);
   dir.position.set(5, 8, 4);

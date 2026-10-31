@@ -9,6 +9,7 @@ import { generateFree3DFromImage } from './hf3d.js';
 import { getHfToken, saveHfToken, clearHfToken } from './hf-token.js';
 import { refreshOutliner } from './outliner.js';
 import { loadEnvironmentFile, setEnvironmentBackground } from './environment.js';
+import { renderSnapshot } from './snapshot.js';
 
 const $ = (id) => document.getElementById(id);
 // Enlace seguro: si falta un id, se deja constancia en #log en
@@ -75,6 +76,18 @@ export function initUI() {
     }
   });
   bind('envBackground', 'change', (e) => { setEnvironmentBackground(e.target.checked); });
+
+  // --- Render Final (Snapshot PNG, v0.10) ---
+  bind('renderImage', 'click', () => {
+    try {
+      const scale = parseFloat($('renderScale')?.value || '2');
+      const transparent = $('renderTransparent')?.checked || false;
+      const result = renderSnapshot({ scale, transparent });
+      log(`Imagen renderizada: render_estudio3d.png (${result.scale}x, ${result.width}x${result.height}, fondo ${transparent ? 'transparente' : 'como en escena'}).`);
+    } catch (err) {
+      log('Render: ' + (err?.message || err));
+    }
+  });
   $('exportGLB').onclick = exportGLB;
   $('exportOBJ').onclick = exportOBJ;
 

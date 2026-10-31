@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Estudio 3D — v0.9 HDRI</title>
+<title>Estudio 3D — v0.10 Render</title>
 <link rel="stylesheet" href="styles.css">
 <script type="importmap">
 {"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/","@gradio/client":"https://cdn.jsdelivr.net/npm/@gradio/client/dist/index.min.js"}}
@@ -11,8 +11,8 @@
 </head>
 <body>
 <header>
-<h1>Estudio 3D <span class="badge">v0.9 HDRI</span></h1>
-<p>Escena, interfaz, importación/exportación, IA y timeline separados en módulos ES6. Generación gratuita por Hugging Face Spaces con token Read del usuario, guardado solo en su navegador, con errores visibles en el panel de registro. Las mallas inyectadas se normalizan a eje mayor 2, se centran en (0,0,0) y la cámara las encuadra al 80%. El Outliner lista la jerarquía y el inspector edita una sola sub-malla sin tocar su textura. El recuadro magenta se recrea tras la normalización y sigue a la malla al moverla con el gizmo. Ahora con iluminación HDRI (IBL) opcional.</p>
+<h1>Estudio 3D <span class="badge">v0.10 Render</span></h1>
+<p>Escena, interfaz, importación/exportación, IA y timeline separados en módulos ES6. Generación gratuita por Hugging Face Spaces con token Read del usuario, guardado solo en su navegador, con errores visibles en el panel de registro. Las mallas inyectadas se normalizan a eje mayor 2, se centran en (0,0,0) y la cámara las encuadra al 80%. El Outliner lista la jerarquía y el inspector edita una sola sub-malla sin tocar su textura. El recuadro magenta se recrea tras la normalización y sigue a la malla al moverla con el gizmo. Ahora con iluminación HDRI (IBL) opcional y render final PNG con supersampling.</p>
 </header>
 <div class="layout">
 <aside>
@@ -34,6 +34,13 @@
 <label style="display:flex;gap:8px;align-items:center"><input type="checkbox" id="envBackground" style="width:auto;margin:0"> Mostrar HDRI como fondo visible</label>
 <div id="envStatus" class="small">Sin HDRI: iluminación por defecto (RoomEnvironment). Al cargar un .hdr se filtra con PMREM y se asigna a scene.environment; cargar uno nuevo libera el anterior en VRAM.</div>
 <p class="small">Sin marcar la casilla, el fondo permanece en color sólido oscuro aunque la iluminación HDRI ya esté activa. Un objeto metálico (metal alto, rugosidad baja) refleja el entorno cargado.</p>
+
+<h2>Render Final</h2>
+<label>Resolución (supersampling)</label>
+<select id="renderScale"><option value="2">2x (doble)</option><option value="4">4x (cuádruple)</option></select>
+<label style="display:flex;gap:8px;align-items:center"><input type="checkbox" id="renderTransparent" style="width:auto;margin:0"> Fondo Transparente</label>
+<button id="renderImage">Renderizar Imagen (PNG)</button>
+<p class="small">Descarga render_estudio3d.png con la resolución elegida. Con fondo transparente, se ocultan temporalmente el fondo y la rejilla, pero la iluminación del entorno se mantiene intacta.</p>
 
 <h2>Importar / Exportar</h2>
 <label>Importar modelo (.glb, .gltf, .obj, .fbx)</label>
