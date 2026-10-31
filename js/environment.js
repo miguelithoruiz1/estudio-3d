@@ -21,8 +21,8 @@
 
 import * as THREE from 'three';
 import { RGBELoader } from 'three/addons/loaders/RGBELoader.js';
-import { scene, renderer, DARK_BACKGROUND } from './scene.js?v=0.13';
-import { log } from './store.js?v=0.13';
+import { scene, renderer, DARK_BACKGROUND } from './scene.js?v=0.14';
+import { log } from './store.js?v=0.14';
 
 let pmremGenerator = null;
 let currentHdrTexture = null;

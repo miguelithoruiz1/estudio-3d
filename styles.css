@@ -24,3 +24,8 @@ label{font-size:12px;color:#9fb0c8;display:block;margin-top:8px}
 .spinner{display:inline-block;width:14px;height:14px;border:2px solid #2c3a52;border-top-color:#00e5ff;border-radius:50%;animation:spin 0.8s linear infinite;vertical-align:-2px;margin-right:6px}
 @keyframes spin{to{transform:rotate(360deg)}}
 @media(max-width:800px){.layout{grid-template-columns:1fr} aside{order:2}}
+/* v0.14: capa DOM Overlay para AR. Oculta fuera de sesión (la
+   muestra initAR en sessionstart). touch-action:none evita que
+   el navegador intercepte el pinch con su propio zoom/scroll. */
+#arOverlay{position:fixed;inset:0;z-index:20;touch-action:none;display:none}
+#arOverlay .hint{position:absolute;top:12px;left:50%;transform:translateX(-50%);background:rgba(0,0,0,.55);padding:8px 12px;border-radius:999px;font-size:13px;color:#fff;pointer-events:none;white-space:nowrap}

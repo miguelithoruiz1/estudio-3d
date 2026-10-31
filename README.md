@@ -1,4 +1,4 @@
-# Estudio 3D — v0.13 AR WebXR
+# Estudio 3D — v0.14 Gestos AR
 
 ## Arquitectura
 
@@ -12,7 +12,8 @@ sincroniza dinámicamente el BoxHelper de selección, la v0.9
 añade iluminación HDRI (IBL), la v0.10 añade render final PNG
 la v0.11 añade post-procesamiento VFX con Bloom, la v0.12
 añade cache busting con query string de versión y la v0.13
-añade AR WebXR con hit-test:
+añade AR WebXR con hit-test y la v0.14 añade gestos
+multitáctiles en AR:
 
 ```
 index.html        # Solo estructura y paneles
@@ -43,6 +44,54 @@ test/test-v11.mjs # Test Node de la v0.11 (composer, Bloom, panel VFX, Snapshot 
 test/test-v12.mjs # Test Node de la v0.12 (cache busting ?v=0.12, log v0.12)
 js/ar.js       # WebXR AR: retículo, hit-test, anclaje, paneles sessionstart/end (v0.13)
 test/test-v13.mjs # Test Node de la v0.13 (XR, ARButton, retículo, anclaje, cache busting)
+test/test-v14.mjs # Test Node de la v0.14 (dom-overlay, pinch, twist, clamp, cache busting)
+```
+
+## v0.14 Gestos AR: pinch, twist y reposicionamiento con 1 toque
+
+- DOM Overlay: `ARButton.createButton(renderer, {
+  requiredFeatures: ['hit-test'], optionalFeatures:
+  ['dom-overlay'], domOverlay: { root: #arOverlay } })`. La raíz
+  es el contenedor dedicado `#arOverlay` (no `document.body`
+  entero, que incluye paneles y canvas): un div a pantalla
+  completa, oculto fuera de sesión, con `touch-action:none` y
+  un texto de ayuda ("Toca para colocar • Pellizca para escalar
+  • Gira con dos dedos para rotar"). `dom-overlay` es opcional:
+  sin soporte, la sesión sigue con hit-test y el `select` de
+  v0.13 como respaldo. Si `#arOverlay` faltara, se usa
+  `document.body` como respaldo.
+- Multitáctil en `js/ar.js`, con listeners `touchstart` y
+  `touchmove` (y `touchend`/`touchcancel`) sobre `#arOverlay`,
+  con `{ passive: false }` para que `preventDefault()` funcione
+  y el navegador no robe el gesto con su zoom/scroll:
+  - 2 toques: distancia inicial y ángulo inicial se guardan en
+    `touchstart` (junto a la escala inicial del modelo); en
+    `touchmove`, factor = distancia actual / inicial para la
+    escala, y delta de ángulo normalizado a [-PI, PI] para
+    `rotation.y += delta`.
+  - 1 toque: en `touchstart` y en `touchmove`, si el retículo
+    es visible, se llama a `placeSelectedAtReticle()`, así que
+    tocar coloca y arrastrar con un dedo reposiciona
+    dinámicamente mientras el retículo siga sobre una superficie.
+  - El `select` de v0.13 se mantiene como respaldo sin overlay;
+    con overlay, los toques van al DOM y no disparan `select`,
+    y colocar dos veces en el mismo retículo sería idempotente.
+- Guardrail: escala por eje con `THREE.MathUtils.clamp(valor,
+  0.1, 10)`, sobre la escala inicial por el factor de pinch,
+  para que un gesto brusco no deje el modelo microscópico ni
+  titánico. Se guarda la escala inicial al empezar el pinch para
+  no acumular error en cada `touchmove`.
+- Cache busting: `?v=0.14` en la entrada, el CSS y las 39
+  importaciones locales, siguiendo la convención v0.12.
+- Prueba local: test v0.14 aprobado, sintaxis ES6 aprobada,
+  servidor local 200 para index, main.js?v=0.14 y ar.js?v=0.14
+  con `#arOverlay` servido, y gestos simulados aprobados
+  (pinch 100->200 duplica, 100->2000 clampa a 10, 100->5 clampa
+  a 0.1, twist 0.5 rad, 1 toque reposiciona a 1.5/0/-2).
+  Límite honesto: los gestos reales exigen un móvil con WebXR +
+  dom-overlay + cámara y no se pueden probar en Node ni en
+  escritorio; quedan para la prueba del usuario en su móvil.
+```
 ```
 
 ## v0.13 AR WebXR: colocar el modelo en el mundo real
