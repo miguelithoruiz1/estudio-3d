@@ -8,6 +8,7 @@ import { generate3DFromImage } from './ai3d.js';
 import { generateFree3DFromImage } from './hf3d.js';
 import { getHfToken, saveHfToken, clearHfToken } from './hf-token.js';
 import { refreshOutliner } from './outliner.js';
+import { loadEnvironmentFile, setEnvironmentBackground } from './environment.js';
 
 const $ = (id) => document.getElementById(id);
 // Enlace seguro: si falta un id, se deja constancia en #log en
@@ -57,6 +58,23 @@ export function initUI() {
   };
 
   $('importModel').onchange = (e) => { if (e.target.files[0]) loadModelFile(e.target.files[0]); };
+
+  // --- Entorno / Iluminación (HDRI, v0.9) ---
+  bind('envHdr', 'change', async (e) => {
+    const file = e.target.files?.[0];
+    const status = $('envStatus');
+    if (!file) return;
+    if (status) status.textContent = 'Cargando HDRI…';
+    try {
+      const result = await loadEnvironmentFile(file);
+      if (status) status.textContent = `Entorno cargado: ${result.fileName}. Iluminación IBL activa; el fondo sigue la casilla de abajo.`;
+      log(`Entorno HDRI cargado: ${result.fileName} (PMREM en scene.environment).`);
+    } catch (err) {
+      if (status) status.textContent = 'Error de entorno: ' + (err?.message || err);
+      log('Entorno HDRI: ' + (err?.message || err));
+    }
+  });
+  bind('envBackground', 'change', (e) => { setEnvironmentBackground(e.target.checked); });
   $('exportGLB').onclick = exportGLB;
   $('exportOBJ').onclick = exportOBJ;
 

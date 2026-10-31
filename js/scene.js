@@ -5,6 +5,8 @@ import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
 import { state, log, notifyObjectsChange } from './store.js';
 
 export let renderer, scene, camera, controls, transform;
+export let initialEnvironment = null;
+export const DARK_BACKGROUND = 0x0b0e14;
 let selectionHelper = null;
 
 export function initScene(canvas) {
@@ -17,8 +19,11 @@ export function initScene(canvas) {
   renderer.outputColorSpace = THREE.SRGBColorSpace;
 
   scene = new THREE.Scene();
-  scene.background = new THREE.Color(0x0b0e14);
-  scene.environment = new THREE.PMREMGenerator(renderer).fromScene(new RoomEnvironment(), 0.04).texture;
+  scene.background = new THREE.Color(DARK_BACKGROUND);
+  // v0.9: entorno por defecto (RoomEnvironment) guardado para
+  // poder restaurarlo si se quita un HDRI. No es el HDRI.
+  initialEnvironment = new THREE.PMREMGenerator(renderer).fromScene(new RoomEnvironment(), 0.04).texture;
+  scene.environment = initialEnvironment;
 
   camera = new THREE.PerspectiveCamera(55, 1, 0.1, 200);
   camera.position.set(5, 4, 7);

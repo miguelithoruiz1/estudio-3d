@@ -31,7 +31,7 @@ function start() {
     addPrimitive('box');
     state.objects[state.objects.length - 1].name = 'Cubo inicial';
     updateTracks();
-    log('Listo v0.8. Añade objetos, importa un modelo o genera uno gratis con Hugging Face (necesita tu token Read, guardado solo en tu navegador).');
+    log('Listo v0.9. Añade objetos, importa un modelo o genera uno gratis con Hugging Face (necesita tu token Read, guardado solo en tu navegador).');
     window.__estudioReady = true;
     animate();
   } catch (err) {

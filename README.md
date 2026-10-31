@@ -1,4 +1,4 @@
-# Estudio 3D — v0.8 BoxHelper
+# Estudio 3D — v0.9 HDRI
 
 ## Arquitectura
 
@@ -7,8 +7,9 @@ La v0.2 separó la lógica en módulos ES6, la v0.3 añadió el pipeline gratuit
 la v0.4 es la revisión QA que repara su integración, la v0.5 añade
 autenticación segura con token de Hugging Face, la v0.6 añade
 post-procesamiento espacial para las mallas inyectadas, la v0.7
-añade Outliner e inspector de materiales granular y la v0.8
-sincroniza dinámicamente el BoxHelper de selección:
+añade Outliner e inspector de materiales granular, la v0.8
+sincroniza dinámicamente el BoxHelper de selección y la v0.9
+añade iluminación HDRI (IBL):
 
 ```
 index.html        # Solo estructura y paneles
@@ -30,6 +31,45 @@ test/test-v06.mjs # Test Node de la v0.6 (Box3, eje 2, encuadre FOV 80%)
 js/outliner.js    # Árbol de jerarquía, excluye helpers/grillas (v0.7)
 test/test-v07.mjs # Test Node de la v0.7 (Outliner, Mesh hijo, no destructivo)
 test/test-v08.mjs # Test Node de la v0.8 (refresh, sync, cleanup)
+js/environment.js # HDRI: RGBELoader + PMREM, toggle fondo, dispose VRAM (v0.9)
+test/test-v09.mjs # Test Node de la v0.9 (RGBELoader, PMREM, toggle, dispose)
+test/test-env.hdr # HDR local 4x4 Radiance, solo local, no se sube por ser binario
+```
+
+## v0.9 HDRI: iluminación basada en imagen (IBL)
+
+- Nuevo sub-panel "Entorno / Iluminación" con
+  `<input type="file" id="envHdr" accept=".hdr">` y un checkbox
+  `#envBackground` ("Mostrar HDRI como fondo visible").
+- `js/environment.js` usa `RGBELoader` de
+  `three/addons/loaders/RGBELoader.js`, marca la textura como
+  `EquirectangularReflectionMapping` (lineal, sin sRGB) y la pasa
+  por `PMREMGenerator.fromEquirectangular()` para pre-calcular
+  la irradiancia PBR. La textura resultante se asigna a
+  `scene.environment`, que ilumina todos los materiales PBR;
+  un objeto metálico (metalness alto, rugosidad baja) refleja
+  ese entorno.
+- Fondo: si la casilla está marcada, `scene.background` es la
+  textura HDRI equirectangular; si no, vuelve a color sólido
+  oscuro `#0b0e14`, mientras la iluminación del entorno sigue
+  activa en ambos casos. El entorno por defecto
+  (RoomEnvironment) queda guardado en `scene.initialEnvironment`
+  para una futura restauración.
+- VRAM estricta: antes de cargar un nuevo HDRI, se desengancha
+  `scene.environment` de la textura PMREM vieja y se hace
+  `dispose()` de la textura HDR anterior y de la textura PMREM
+  anterior. El generador PMREM se reutiliza. El HDRI nunca se
+  sube al repositorio: solo vive en la memoria del navegador.
+- Prueba local: HDR Radiance 4x4 creado a mano (109 bytes,
+  píxeles brillantes y oscuros), parseado con `RGBELoader` real
+  en Node (4x4, 64 valores HalfFloat, no ceros), y material
+  metálico de prueba con metalness 1 y rugosidad 0. Límite
+  honesto: PMREM real y reflejos visibles exigen WebGL con GPU
+  y no se pueden ejecutar en Node sin GPU; la confirmación
+  visual de reflejos queda para la prueba en navegador con un
+  objeto metálico y un HDRI real (el de prueba 4x4 es demasiado
+  pequeño para un entorno realista).
+```
 ```
 
 ## v0.8 BoxHelper: sincronización dinámica de matrices
