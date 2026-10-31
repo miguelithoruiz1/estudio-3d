@@ -1,0 +1,87 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Estudio 3D — v0.2 modular</title>
+<link rel="stylesheet" href="styles.css">
+<script type="importmap">
+{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"}}
+</script>
+</head>
+<body>
+<header>
+<h1>Estudio 3D <span class="badge">v0.2 modular</span></h1>
+<p>Escena, interfaz, importación/exportación, IA y timeline separados en módulos ES6. Sin relieve 2D: ahora la generación es por API externa.</p>
+</header>
+<div class="layout">
+<aside>
+<h2>Escena</h2>
+<div class="row">
+<button id="addBox">Cubo</button><button id="addSphere">Esfera</button>
+<button id="addCyl">Cilindro</button><button id="addTorus">Toro</button>
+</div>
+<button id="addText">Texto motion graphics</button>
+<button id="addParticles">Sistema de partículas</button>
+<button id="addArm">Rig simple: brazo 2 huesos</button>
+<div class="row">
+<button id="addDir">Luz direccional</button><button id="addPoint">Luz puntual</button>
+</div>
+
+<h2>Importar / Exportar</h2>
+<label>Importar modelo (.glb, .gltf, .obj, .fbx)</label>
+<input type="file" id="importModel" accept=".glb,.gltf,.obj,.fbx">
+<div class="row">
+<button id="exportGLB">Exportar .glb</button><button id="exportOBJ">Exportar .obj</button>
+</div>
+
+<h2>Generar 3D con IA</h2>
+<label>Proveedor</label>
+<select id="aiProvider"><option value="meshy">Meshy</option><option value="tripo">Tripo v3</option></select>
+<label>Clave de API (solo en esta sesión, no se guarda)</label>
+<input type="password" id="aiKey" placeholder="pega tu clave aquí" autocomplete="off">
+<label>URL pública de la imagen</label>
+<input type="text" id="aiImageUrl" placeholder="https://…/objeto.png">
+<label>O imagen local</label>
+<input type="file" id="aiImageFile" accept="image/png,image/jpeg,image/webp">
+<button id="generateAI">Generar 3D con IA e inyectar .glb</button>
+<div class="warn small">Meshy acepta archivo local como data URI y URL pública. Tripo con archivo local lo sube primero a /v3/files. Generar cuesta créditos y, en Meshy, crear tareas requiere plan de pago. Si el navegador bloquea la llamada por CORS, hace falta un pequeño proxy/backend (ver README). La clave nunca se escribe en el repositorio.</div>
+
+<h2>Objeto seleccionado</h2>
+<div id="selName" class="small">Ninguno. Haz clic en un objeto.</div>
+<div class="row">
+<button data-mode="translate">Mover (W)</button><button data-mode="rotate">Rotar (E)</button>
+</div>
+<button data-mode="scale">Escalar (R)</button>
+<label>Color material</label><input type="color" id="matColor" value="#00e5ff">
+<div class="row">
+<label>Metal<input type="range" id="matMetal" min="0" max="1" step="0.05" value="0.1"></label>
+<label>Rugosidad<input type="range" id="matRough" min="0" max="1" step="0.05" value="0.5"></label>
+</div>
+<div class="row">
+<button id="duplicate">Duplicar</button><button id="deleteObj">Eliminar</button>
+</div>
+<button id="inflate">Inflar / esculpir básico (+0.08)</button>
+<h2>Rig simple</h2>
+<label>Hombro<input type="range" id="shoulder" min="-90" max="90" value="0"></label>
+<label>Codo<input type="range" id="elbow" min="0" max="120" value="0"></label>
+<p class="small">Solo afecta al último brazo creado.</p>
+<h2>Registro</h2>
+<div id="log">Listo.</div>
+</aside>
+<main><canvas id="viewport"></canvas></main>
+</div>
+<div class="timeline">
+<strong>Timeline</strong>
+<button id="play">▶ Reproducir</button>
+<button id="recordKey">＋ Keyframe en tiempo actual</button>
+<input type="range" id="timeSlider" min="0" max="10" step="0.05" value="0">
+<span id="timeLabel">0.00 / 10 s</span>
+<label style="display:flex;gap:6px;align-items:center">Duración <input type="number" id="duration" value="10" min="2" max="60" style="width:70px"></label>
+<button id="recVideo">● Grabar video WebM</button>
+<button id="stopVideo">■ Detener y descargar</button>
+<span id="tracks" class="small"></span>
+</div>
+<script type="module" src="js/main.js"></script>
+</body>
+</html>
