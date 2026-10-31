@@ -76,6 +76,61 @@ export function register(obj, name) {
   return obj;
 }
 
+// v0.6: normalización geométrica y encuadre de cámara adaptativo.
+// 1) Bounding Box con THREE.Box3().setFromObject().
+// 2) Escala para que el eje más largo mida exactamente 2 unidades
+//    y centro de la geometría en el origen absoluto (0, 0, 0).
+// 3) Encuadre trigonométrico: target de OrbitControls al centro del
+//    modelo y cámara hacia atrás a lo largo del vector de visión
+//    actual, con distancia = radio / (0.8 * sin(FOV_efectivo / 2)),
+//    de modo que la malla ocupe el 80% del viewport. El FOV efectivo
+//    es el menor entre el vertical y el horizontal (este último
+//    derivado del aspect), para que la esfera encaje también en
+//    viewports verticales. La dirección de vista se conserva: no se
+//    salta a un ángulo por defecto, solo se retrocede.
+// Devuelve { dimensions, center, radius, distance } o null si la
+// caja está vacía o la cámara aún no está inicializada.
+export function normalizeAndFrame(obj, { targetSize = 2, fill = 0.8 } = {}) {
+  if (!obj) return null;
+  obj.updateMatrixWorld(true);
+  const box = new THREE.Box3().setFromObject(obj);
+  if (box.isEmpty()) return null;
+  const size = new THREE.Vector3();
+  box.getSize(size);
+  const longest = Math.max(size.x, size.y, size.z) || 1;
+  const scale = targetSize / longest;
+  obj.scale.multiplyScalar(scale);
+  obj.updateMatrixWorld(true);
+  const scaledBox = new THREE.Box3().setFromObject(obj);
+  const scaledCenter = new THREE.Vector3();
+  scaledBox.getCenter(scaledCenter);
+  // Llevar el centro mundial a (0, 0, 0): restar el centro escalado
+  // de la posición del objeto (su padre es la escena).
+  obj.position.sub(scaledCenter);
+  obj.updateMatrixWorld(true);
+  const finalBox = new THREE.Box3().setFromObject(obj);
+  const finalSize = new THREE.Vector3();
+  finalBox.getSize(finalSize);
+  const finalCenter = new THREE.Vector3();
+  finalBox.getCenter(finalCenter);
+  const sphere = new THREE.Sphere();
+  finalBox.getBoundingSphere(sphere);
+  let distance = null;
+  if (camera && controls) {
+    const vFov = THREE.MathUtils.degToRad(camera.fov);
+    const hFov = 2 * Math.atan(Math.tan(vFov / 2) * camera.aspect);
+    const effectiveFov = Math.min(vFov, hFov);
+    distance = sphere.radius / (fill * Math.sin(effectiveFov / 2));
+    const direction = camera.position.clone().sub(controls.target);
+    if (direction.lengthSq() < 1e-6) direction.set(1, 0.7, 1);
+    direction.normalize();
+    controls.target.copy(finalCenter);
+    camera.position.copy(finalCenter).add(direction.multiplyScalar(distance));
+    controls.update();
+  }
+  return { dimensions: finalSize, center: finalCenter, radius: sphere.radius, distance };
+}
+
 export function select(obj) {
   state.selected = obj;
   if (obj) transform.attach(obj);

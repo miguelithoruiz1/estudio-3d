@@ -118,6 +118,11 @@ export function initUI() {
           log(msg);
         },
       });
+      // v0.6: éxito -> destruir el spinner de #hfStatus (#log es
+      // solo texto y ya contiene el mensaje con las dimensiones
+      // finales). Asignar textContent sobre sí mismo conserva el
+      // texto y elimina el <span class="spinner">.
+      if (status) status.textContent = status.textContent;
     } catch (err) {
       const msg = 'IA gratuita: ' + (err?.message || err);
       log(msg);

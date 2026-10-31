@@ -1,11 +1,12 @@
-# Estudio 3D — v0.5 Token
+# Estudio 3D — v0.6 Encuadre
 
 ## Arquitectura
 
 La v0.1 monolítica quedó guardada en local como `index-v01.html` (no se sube a Pages).
 La v0.2 separó la lógica en módulos ES6, la v0.3 añadió el pipeline gratuito,
-la v0.4 es la revisión QA que repara su integración y la v0.5 añade
-autenticación segura con token de Hugging Face:
+la v0.4 es la revisión QA que repara su integración, la v0.5 añade
+autenticación segura con token de Hugging Face y la v0.6 añade
+post-procesamiento espacial para las mallas inyectadas:
 
 ```
 index.html        # Solo estructura y paneles
@@ -23,6 +24,37 @@ js/timeline.js    # Keyframes, pistas y grabación WebM
 js/ui.js          # Enlaces de todos los controles del panel
 test/test-v04.mjs # Test Node de la v0.4 (ids, bindings, gradio lazy)
 test/test-v05.mjs # Test Node de la v0.5 (password, localStorage, hf_token)
+test/test-v06.mjs # Test Node de la v0.6 (Box3, eje 2, encuadre FOV 80%)
+```
+
+## v0.6 Encuadre: normalización y cámara adaptativa
+
+La v0.5 ya normalizaba la malla gratuita a eje mayor 2 en `hf3d.js`,
+pero sin encuadre de cámara y con el spinner de `#hfStatus` vivo
+tras el éxito. La v0.6 lo centraliza en `scene.normalizeAndFrame`:
+
+- Bounding Box con `THREE.Box3().setFromObject()`, escala para
+  que el eje más largo mida exactamente 2 unidades y centro de la
+  geometría en el origen absoluto (0, 0, 0).
+- Encuadre trigonométrico: `controls.target` al centro del modelo
+  y cámara hacia atrás a lo largo de su vector de visión actual,
+  a distancia `radio / (0.8 * sin(FOV_efectivo / 2))`, con FOV
+  efectivo = menor entre vertical y horizontal (derivado del
+  aspect), para que la malla ocupe el 80% del viewport sin saltar
+  a un ángulo por defecto.
+- Se aplica tanto a la generación gratuita (`hf3d.js`) como a los
+  modelos importados y a los de pago (`loaders.js`), que ya no
+  usan `position.y = 1`.
+- Limpieza de UI: tras el éxito, `ui.js` destruye el spinner de
+  `#hfStatus` asignando su `textContent` sobre sí mismo, y
+  `#log` registra el éxito con las dimensiones finales, por
+  ejemplo "Dimensiones finales: 2.00 x 1.23 x 0.87 (eje mayor
+  2.00). Cámara encuadrada al 80%."
+- Límite honesto: el encuadre está implementado y probado en
+  Node por fórmula y por código, pero no está validado en vivo
+  con un modelo real generado, porque eso exige el token Read
+  del usuario en su navegador.
+```
 ```
 
 ## v0.5 Token: autenticación segura del lado del cliente

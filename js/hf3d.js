@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
-import { scene, register } from './scene.js';
+import { scene, register, normalizeAndFrame } from './scene.js';
 import { log } from './store.js';
 import { validateImageMeta, getImageDimensions } from './validate-image.js';
 import { getHfToken } from './hf-token.js';
@@ -87,20 +87,15 @@ async function loadGlbFromUrlAtOrigin(url, name) {
       new GLTFLoader().load(objectUrl, resolve, undefined, (e) => reject(new Error(e?.message || 'GLTFLoader no pudo leer el .glb')));
     });
     const model = gltf.scene;
-    const box = new THREE.Box3().setFromObject(model);
-    const size = new THREE.Vector3();
-    box.getSize(size);
-    const center = new THREE.Vector3();
-    box.getCenter(center);
-    const maxDim = Math.max(size.x, size.y, size.z) || 1;
-    const scale = maxDim > 0 ? 2 / maxDim : 1;
-    model.scale.setScalar(scale);
-    model.position.set(-center.x * scale, -center.y * scale, -center.z * scale);
     const group = new THREE.Group();
     group.add(model);
     group.position.set(0, 0, 0);
     register(group, name);
-    return group;
+    // v0.6: la normalización (eje mayor 2, centro en (0,0,0)) y el
+    // encuadre de cámara al 80% viven en scene.normalizeAndFrame,
+    // compartido con los modelos importados en loaders.js.
+    const framing = normalizeAndFrame(group);
+    return { group, framing };
   } finally {
     URL.revokeObjectURL(objectUrl);
   }
@@ -198,7 +193,12 @@ export async function generateFree3DFromImage({ file, space = 'sf3d', onProgress
     glbUrl = await generateWithTripoSR(file, onProgress, gradio, hfToken);
   }
   onProgress('Malla lista. Cargando el .glb en (0, 0, 0)…');
-  const obj = await loadGlbFromUrlAtOrigin(glbUrl, 'Modelo IA gratuito (HF)');
-  onProgress('Modelo IA gratuito añadido en (0, 0, 0).');
-  return obj;
+  const { group, framing } = await loadGlbFromUrlAtOrigin(glbUrl, 'Modelo IA gratuito (HF)');
+  if (framing?.dimensions) {
+    const d = framing.dimensions;
+    onProgress(`Modelo IA gratuito añadido en (0, 0, 0). Dimensiones finales: ${d.x.toFixed(2)} x ${d.y.toFixed(2)} x ${d.z.toFixed(2)} (eje mayor 2.00). Cámara encuadrada al 80%.`);
+  } else {
+    onProgress('Modelo IA gratuito añadido en (0, 0, 0).');
+  }
+  return group;
 }
