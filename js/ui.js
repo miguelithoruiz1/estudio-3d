@@ -1,16 +1,16 @@
 import * as THREE from 'three';
-import { state, setLogger, log } from './store.js?v=0.12';
-import { scene, renderer, register, setTransformMode, removeSelected, duplicateSelected, applyMaterial } from './scene.js?v=0.12';
-import { loadModelFile, exportGLB, exportOBJ, download } from './loaders.js?v=0.12';
-import { addPrimitive, addParticles, addTextMotion, addArm, setShoulder, setElbow, inflateSelected } from './effects.js?v=0.12';
-import { recordKeyframe, applyKeyframes, updateTracks, createVideoRecorder } from './timeline.js?v=0.12';
-import { generate3DFromImage } from './ai3d.js?v=0.12';
-import { generateFree3DFromImage } from './hf3d.js?v=0.12';
-import { getHfToken, saveHfToken, clearHfToken } from './hf-token.js?v=0.12';
-import { refreshOutliner } from './outliner.js?v=0.12';
-import { loadEnvironmentFile, setEnvironmentBackground } from './environment.js?v=0.12';
-import { renderSnapshot } from './snapshot.js?v=0.12';
-import { setBloomEnabled, setBloomStrength, getBloomState, isVFXReady } from './vfx.js?v=0.12';
+import { state, setLogger, log } from './store.js?v=0.13';
+import { scene, renderer, register, setTransformMode, removeSelected, duplicateSelected, applyMaterial } from './scene.js?v=0.13';
+import { loadModelFile, exportGLB, exportOBJ, download } from './loaders.js?v=0.13';
+import { addPrimitive, addParticles, addTextMotion, addArm, setShoulder, setElbow, inflateSelected } from './effects.js?v=0.13';
+import { recordKeyframe, applyKeyframes, updateTracks, createVideoRecorder } from './timeline.js?v=0.13';
+import { generate3DFromImage } from './ai3d.js?v=0.13';
+import { generateFree3DFromImage } from './hf3d.js?v=0.13';
+import { getHfToken, saveHfToken, clearHfToken } from './hf-token.js?v=0.13';
+import { refreshOutliner } from './outliner.js?v=0.13';
+import { loadEnvironmentFile, setEnvironmentBackground } from './environment.js?v=0.13';
+import { renderSnapshot } from './snapshot.js?v=0.13';
+import { setBloomEnabled, setBloomStrength, getBloomState, isVFXReady } from './vfx.js?v=0.13';
 
 const $ = (id) => document.getElementById(id);
 // Enlace seguro: si falta un id, se deja constancia en #log en

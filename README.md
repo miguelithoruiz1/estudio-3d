@@ -1,4 +1,4 @@
-# Estudio 3D — v0.12 Cache Busting
+# Estudio 3D — v0.13 AR WebXR
 
 ## Arquitectura
 
@@ -10,8 +10,9 @@ post-procesamiento espacial para las mallas inyectadas, la v0.7
 añade Outliner e inspector de materiales granular, la v0.8
 sincroniza dinámicamente el BoxHelper de selección, la v0.9
 añade iluminación HDRI (IBL), la v0.10 añade render final PNG
-la v0.11 añade post-procesamiento VFX con Bloom y la v0.12
-añade cache busting con query string de versión:
+la v0.11 añade post-procesamiento VFX con Bloom, la v0.12
+añade cache busting con query string de versión y la v0.13
+añade AR WebXR con hit-test:
 
 ```
 index.html        # Solo estructura y paneles
@@ -40,6 +41,58 @@ test/test-v10.mjs # Test Node de la v0.10 (botón, alfa, supersampling, restaura
 js/vfx.js       # Post-procesamiento: EffectComposer + Bloom + OutputPass (v0.11)
 test/test-v11.mjs # Test Node de la v0.11 (composer, Bloom, panel VFX, Snapshot Sync)
 test/test-v12.mjs # Test Node de la v0.12 (cache busting ?v=0.12, log v0.12)
+js/ar.js       # WebXR AR: retículo, hit-test, anclaje, paneles sessionstart/end (v0.13)
+test/test-v13.mjs # Test Node de la v0.13 (XR, ARButton, retículo, anclaje, cache busting)
+```
+
+## v0.13 AR WebXR: colocar el modelo en el mundo real
+
+- `main.js`: `renderer.xr.enabled = true` y
+  `document.body.appendChild(ARButton.createButton(renderer,
+  { requiredFeatures: ['hit-test'] }))`, importado desde
+  `three/addons/webxr/ARButton.js`. En escritorio o en un
+  navegador sin AR, el botón muestra "AR NOT SUPPORTED":
+  esperado, no un fallo. Si ARButton falla, la app sigue sin AR.
+- Nuevo `js/ar.js`: retículo anillo (`RingGeometry(0.15, 0.2,
+  32)`, `matrixAutoUpdate = false`, invisible al inicio);
+  hit-testing cada frame con el XRFrame (`requestReferenceSpace
+  ('viewer')` + `requestHitTestSource`, `frame.getHitTestResults
+  (hitTestSource)`, matriz de la pose escrita en el retículo),
+  así que el anillo sigue el centro de la cámara y se adhiere
+  al suelo o a una mesa detectada; al tocar la pantalla, el
+  controlador dispara `select` y el objeto colocable se desplaza
+  instantáneamente a la posición del retículo, sin cambiar
+  escala ni rotación. Si lo seleccionado es una malla hija de un
+  .glb, se sube hasta el objeto de nivel superior para mover el
+  .glb completo, no una sola malla. Sin selección, no se mueve
+  nada y se avisa en el registro.
+- UI en AR: en `sessionstart` se ocultan el `<aside>` (que
+  contiene Outliner, VFX e Importación), el header y el timeline,
+  y en `sessionend` se restauran con sus valores originales.
+  Además, en sesión el fondo pasa a `null` (el fondo oscuro
+  taparía la cámara real) y la rejilla se oculta; ambos se
+  restauran al salir.
+- Bucle y render en XR: `main.js` pasa de `requestAnimationFrame`
+  recursivo a `renderer.setAnimationLoop(animate)`, que es el
+  bucle que WebXR exige y que entrega el XRFrame. En sesión AR,
+  el render es `renderer.render()` directo y se omite
+  `OrbitControls.update()` (la cámara la controla WebXR):
+  EffectComposer NO es compatible con WebXR (renderiza a sus
+  propios targets y taparía la cámara real), así que el Bloom
+  queda pausado durante la sesión y vuelve al salir.
+- Cache busting: `?v=0.13` en la entrada, el CSS y las 39
+  importaciones locales (36 de la v0.12 + AR en main y 2 en
+  ar.js), siguiendo la convención v0.12.
+- Prueba local: test v0.13 aprobado, sintaxis aprobada,
+  servidor local 200 para index, main.js?v=0.13 y ar.js?v=0.13,
+  y secuencia lógica simulada (retículo, hit, anclaje del .glb
+  completo, paneles, render directo en XR). Límite honesto: la
+  sesión AR real exige un móvil con WebXR, cámara y HTTPS
+  (GitHub Pages lo es), y no se puede probar en Node ni en el
+  navegador de escritorio; el botón AR, el retículo y el anclaje
+  en un dispositivo real quedan para la prueba del usuario en su
+  móvil.
+```
 ```
 
 ## v0.12 Cache Busting: invalidación de caché controlada
