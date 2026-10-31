@@ -16,6 +16,9 @@ label{font-size:12px;color:#9fb0c8;display:block;margin-top:8px}
 .timeline input[type=range]{flex:1;min-width:220px}
 .timeline button{width:auto}
 #log{font-size:12px;color:#c8d6ea;white-space:pre-wrap}
+.outliner-tree,.outliner-tree ul{list-style:none;margin:4px 0 4px 12px;padding:0}
+.outliner-tree button{width:auto;display:block;text-align:left;margin:2px 0;padding:4px 8px;font-size:12px}
+.outliner-node.active{background:#3a1030;border-color:#ff2e88;color:#fff}
 .badge{display:inline-block;background:#123;padding:3px 8px;border-radius:999px;font-size:11px;color:#7fe7ff;border:1px solid #1e5a6b}
 .warn{background:#2a1a12;border:1px solid #5a3a1e;border-radius:8px;padding:8px}
 .spinner{display:inline-block;width:14px;height:14px;border:2px solid #2c3a52;border-top-color:#00e5ff;border-radius:50%;animation:spin 0.8s linear infinite;vertical-align:-2px;margin-right:6px}

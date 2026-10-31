@@ -1,12 +1,13 @@
-# Estudio 3D — v0.6 Encuadre
+# Estudio 3D — v0.7 Outliner
 
 ## Arquitectura
 
 La v0.1 monolítica quedó guardada en local como `index-v01.html` (no se sube a Pages).
 La v0.2 separó la lógica en módulos ES6, la v0.3 añadió el pipeline gratuito,
 la v0.4 es la revisión QA que repara su integración, la v0.5 añade
-autenticación segura con token de Hugging Face y la v0.6 añade
-post-procesamiento espacial para las mallas inyectadas:
+autenticación segura con token de Hugging Face, la v0.6 añade
+post-procesamiento espacial para las mallas inyectadas y la v0.7
+añade Outliner e inspector de materiales granular:
 
 ```
 index.html        # Solo estructura y paneles
@@ -25,6 +26,42 @@ js/ui.js          # Enlaces de todos los controles del panel
 test/test-v04.mjs # Test Node de la v0.4 (ids, bindings, gradio lazy)
 test/test-v05.mjs # Test Node de la v0.5 (password, localStorage, hf_token)
 test/test-v06.mjs # Test Node de la v0.6 (Box3, eje 2, encuadre FOV 80%)
+js/outliner.js    # Árbol de jerarquía, excluye helpers/grillas (v0.7)
+test/test-v07.mjs # Test Node de la v0.7 (Outliner, Mesh hijo, no destructivo)
+test/composite-2-meshes.glb # GLB local, 2 mallas (HijoA 0.5 / HijoB 0.2), solo local, no se sube por ser binario
+```
+
+## v0.7 Outliner: jerarquía y materiales no destructivos
+
+- Nuevo panel `#outliner` en `js/outliner.js`: árbol dinámico
+  desde `state.objects` (solo interactivos registrados), con
+  hijos anidados. GridHelper y TransformControls quedan fuera
+  porque no están registrados y se filtran además explícitamente.
+  Se redibuja con `state.onObjectsChange` (importación,
+  generación, eliminación) y con `state.onSelectChange` para
+  marcar el nodo activo.
+- Raycasting recursivo en `scene.js`: `intersectObjects(...,
+  true)` y selección exclusivamente del `THREE.Mesh` hijo
+  interceptado, ya no del Group padre. La selección se resalta
+  con un `BoxHelper` temporal magenta, no registrado, así que
+  no aparece en el Outliner.
+- Inspector granular: al seleccionar una sub-malla, los
+  controles de color, metalness y rugosidad reflejan sus valores
+  actuales, y `#matInfo` indica si tiene textura. `applyMaterial`
+  afecta solo a esa Mesh; un Group seleccionado en el Outliner
+  sigue siendo un ajuste de grupo explícito. Bajo ninguna
+  circunstancia se toca `material.map`, no se reemplaza el
+  material ni se elimina la textura: el color solo muta
+  `material.color`, tinte multiplicador en PBR.
+- Prueba local: GLB compuesto generado con Three real
+  (3904 bytes, grupo ModeloCompuesto con HijoA rugosidad 0.5 e
+  HijoB rugosidad 0.2), cargado con GLTFLoader real en Node:
+  cambiar solo HijoA a 0.9 deja HijoB en 0.2 y `material.map`
+  intacto. Servidor local 200 para index, outliner.js y el GLB.
+  La prueba en navegador con la app completa (clic en viewport
+  y cambio desde el slider) queda pendiente de Pages, porque
+  el navegador de prueba no alcanza el localhost de la VM.
+```
 ```
 
 ## v0.6 Encuadre: normalización y cámara adaptativa

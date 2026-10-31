@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Estudio 3D — v0.6 Encuadre</title>
+<title>Estudio 3D — v0.7 Outliner</title>
 <link rel="stylesheet" href="styles.css">
 <script type="importmap">
 {"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/","@gradio/client":"https://cdn.jsdelivr.net/npm/@gradio/client/dist/index.min.js"}}
@@ -11,8 +11,8 @@
 </head>
 <body>
 <header>
-<h1>Estudio 3D <span class="badge">v0.6 Encuadre</span></h1>
-<p>Escena, interfaz, importación/exportación, IA y timeline separados en módulos ES6. Generación gratuita por Hugging Face Spaces con token Read del usuario, guardado solo en su navegador, con errores visibles en el panel de registro. Las mallas inyectadas se normalizan a eje mayor 2, se centran en (0,0,0) y la cámara las encuadra al 80%.</p>
+<h1>Estudio 3D <span class="badge">v0.7 Outliner</span></h1>
+<p>Escena, interfaz, importación/exportación, IA y timeline separados en módulos ES6. Generación gratuita por Hugging Face Spaces con token Read del usuario, guardado solo en su navegador, con errores visibles en el panel de registro. Las mallas inyectadas se normalizan a eje mayor 2, se centran en (0,0,0) y la cámara las encuadra al 80%. El Outliner lista la jerarquía y el inspector edita una sola sub-malla sin tocar su textura.</p>
 </header>
 <div class="layout">
 <aside>
@@ -67,10 +67,15 @@
 </div>
 <button data-mode="scale">Escalar (R)</button>
 <label>Color material</label><input type="color" id="matColor" value="#00e5ff">
+<p class="small">Si la malla tiene textura, el color solo actúa como tinte y no la reemplaza ni la elimina.</p>
 <div class="row">
 <label>Metal<input type="range" id="matMetal" min="0" max="1" step="0.05" value="0.1"></label>
 <label>Rugosidad<input type="range" id="matRough" min="0" max="1" step="0.05" value="0.5"></label>
 </div>
+<div id="matInfo" class="small">Elige una malla para ver su material.</div>
+<h2>Outliner</h2>
+<div id="outliner" class="small">Sin objetos.</div>
+<p class="small">Haz clic en una malla en el viewport o en un nodo del árbol para seleccionarla sola, aunque pertenezca a un .glb complejo. La selección se marca con un recuadro magenta y en el árbol.</p>
 <div class="row">
 <button id="duplicate">Duplicar</button><button id="deleteObj">Eliminar</button>
 </div>

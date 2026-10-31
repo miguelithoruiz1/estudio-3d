@@ -12,6 +12,7 @@ export const state = {
   currentTime: 0,
   duration: 10,
   onObjectsChange: null,
+  onSelectChange: null,
 };
 
 let logFn = (msg) => console.log(msg);

@@ -7,6 +7,7 @@ import { recordKeyframe, applyKeyframes, updateTracks, createVideoRecorder } fro
 import { generate3DFromImage } from './ai3d.js';
 import { generateFree3DFromImage } from './hf3d.js';
 import { getHfToken, saveHfToken, clearHfToken } from './hf-token.js';
+import { refreshOutliner } from './outliner.js';
 
 const $ = (id) => document.getElementById(id);
 // Enlace seguro: si falta un id, se deja constancia en #log en
@@ -28,7 +29,11 @@ export function initUI() {
   // Errores no controlados también visibles en #log, no solo en consola.
   window.addEventListener('error', (e) => { log('Error: ' + (e?.message || 'error desconocido')); });
   window.addEventListener('unhandledrejection', (e) => { log('Error no controlado: ' + (e?.reason?.message || e?.reason || 'desconocido')); });
-  state.onObjectsChange = updateTracks;
+  // v0.7: el Outliner se redibuja tras cada importación o
+  // generación (onObjectsChange) y tras cada selección
+  // (onSelectChange, para marcar el activo).
+  state.onObjectsChange = () => { updateTracks(); refreshOutliner(); };
+  state.onSelectChange = () => refreshOutliner();
 
   $('addBox').onclick = () => addPrimitive('box');
   $('addSphere').onclick = () => addPrimitive('sphere');
@@ -189,6 +194,7 @@ export function initUI() {
   };
   $('stopVideo').onclick = () => { recorder.stop(); state.playing = false; playBtn.textContent = '▶ Reproducir'; };
 
+  refreshOutliner();
   // El bucle de reproducción lo expone main.js mediante este hook.
   state.tickPlayback = () => {
     if (!state.playing) return;

@@ -5,6 +5,7 @@ import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
 import { state, log, notifyObjectsChange } from './store.js';
 
 export let renderer, scene, camera, controls, transform;
+let selectionHelper = null;
 
 export function initScene(canvas) {
   renderer = new THREE.WebGLRenderer({ canvas, antialias: true, preserveDrawingBuffer: true });
@@ -42,11 +43,18 @@ export function initScene(canvas) {
     mouse.x = ((e.clientX - r.left) / r.width) * 2 - 1;
     mouse.y = -((e.clientY - r.top) / r.height) * 2 + 1;
     ray.setFromCamera(mouse, camera);
+    // v0.7: raycasting recursivo, pero selección exclusivamente
+    // del THREE.Mesh hijo interceptado, no del Group padre. En un
+    // .glb, hits[0].object ya es la sub-malla tocada.
     const hits = ray.intersectObjects(state.objects, true);
     if (!hits.length) return;
-    let o = hits[0].object;
-    while (o.parent && !state.objects.includes(o)) o = o.parent;
-    select(o);
+    const hit = hits[0].object;
+    if (hit.isMesh) select(hit);
+    else {
+      let o = hit;
+      while (o.parent && !o.isMesh) o = o.parent;
+      if (o.isMesh) select(o);
+    }
   });
   return { renderer, scene, camera };
 }
@@ -135,12 +143,43 @@ export function select(obj) {
   state.selected = obj;
   if (obj) transform.attach(obj);
   else transform.detach();
+  // v0.7: BoxHelper temporal magenta para la selección, nunca
+  // registrado en state.objects, así que no aparece en el
+  // Outliner ni se puede raycastear como objeto interactivo.
+  if (selectionHelper) {
+    scene.remove(selectionHelper);
+    selectionHelper.geometry?.dispose?.();
+    selectionHelper = null;
+  }
+  if (obj) {
+    selectionHelper = new THREE.BoxHelper(obj, 0xff2e88);
+    scene.add(selectionHelper);
+  }
   const el = document.getElementById('selName');
   if (el) el.textContent = obj ? obj.name + ' (' + obj.type + ')' : 'Ninguno';
+  // v0.7: el inspector refleja los valores actuales de la malla
+  // seleccionada, no valores por defecto. Para un Group, no se
+  // inventa un material: se pide elegir una malla hija.
   const colorInput = document.getElementById('matColor');
-  if (obj && obj.isMesh && obj.material && obj.material.color && colorInput) {
-    colorInput.value = '#' + obj.material.color.getHexString();
+  const metalInput = document.getElementById('matMetal');
+  const roughInput = document.getElementById('matRough');
+  const infoEl = document.getElementById('matInfo');
+  const mat = obj?.isMesh
+    ? (Array.isArray(obj.material) ? obj.material[0] : obj.material)
+    : null;
+  if (mat) {
+    if (mat.color && colorInput) colorInput.value = '#' + mat.color.getHexString();
+    if (typeof mat.metalness === 'number' && metalInput) metalInput.value = String(mat.metalness);
+    if (typeof mat.roughness === 'number' && roughInput) roughInput.value = String(mat.roughness);
+    if (infoEl) {
+      infoEl.textContent = `Material: ${mat.type || 'desconocido'}. Textura: ${mat.map ? 'sí, preservada (el color solo actúa como tinte)' : 'no'}.`;
+    }
+  } else if (infoEl) {
+    infoEl.textContent = obj
+      ? 'Grupo seleccionado: elige una malla hija en el Outliner o en el viewport para editar su material.'
+      : 'Elige una malla para ver su material.';
   }
+  if (typeof state.onSelectChange === 'function') state.onSelectChange(obj);
 }
 
 export function setTransformMode(mode) { transform.setMode(mode); }
@@ -163,10 +202,26 @@ export function duplicateSelected() {
 
 export function applyMaterial(color, metalness, roughness) {
   if (!state.selected) return;
-  state.selected.traverse((o) => {
-    if (!o.isMesh || !o.material) return;
-    if (color !== undefined) o.material.color.set(color);
-    if (metalness !== undefined) o.material.metalness = metalness;
-    if (roughness !== undefined) o.material.roughness = roughness;
-  });
+  // v0.7, granular y no destructivo: si lo seleccionado es una
+  // Mesh, el ajuste afecta SOLO a esa malla, nunca a sus hermanas.
+  // Solo un Group seleccionado en el Outliner aplica a todos sus
+  // hijos, como ajuste de grupo explícito. En ningún caso se toca
+  // material.map, no se reemplaza el material ni se elimina la
+  // textura original: el color solo muta material.color, que en
+  // PBR actúa como tinte multiplicador sobre la textura.
+  const targets = [];
+  if (state.selected.isMesh) {
+    targets.push(state.selected);
+  } else {
+    state.selected.traverse((o) => { if (o.isMesh) targets.push(o); });
+  }
+  for (const mesh of targets) {
+    const mats = Array.isArray(mesh.material) ? mesh.material : [mesh.material];
+    for (const m of mats) {
+      if (!m) continue;
+      if (color !== undefined && m.color) m.color.set(color);
+      if (metalness !== undefined && typeof m.metalness === 'number') m.metalness = metalness;
+      if (roughness !== undefined && typeof m.roughness === 'number') m.roughness = roughness;
+    }
+  }
 }
