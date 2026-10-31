@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Estudio 3D — v0.3 gratuita HF</title>
+<title>Estudio 3D — v0.4 QA</title>
 <link rel="stylesheet" href="styles.css">
 <script type="importmap">
 {"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/","@gradio/client":"https://cdn.jsdelivr.net/npm/@gradio/client/dist/index.min.js"}}
@@ -11,8 +11,8 @@
 </head>
 <body>
 <header>
-<h1>Estudio 3D <span class="badge">v0.3 gratuita HF</span></h1>
-<p>Escena, interfaz, importación/exportación, IA y timeline separados en módulos ES6. Sin relieve 2D: generación gratuita por Hugging Face Spaces, sin clave.</p>
+<h1>Estudio 3D <span class="badge">v0.4 QA</span></h1>
+<p>Escena, interfaz, importación/exportación, IA y timeline separados en módulos ES6. Generación gratuita por Hugging Face Spaces, sin clave, con errores visibles en el panel de registro.</p>
 </header>
 <div class="layout">
 <aside>
@@ -38,8 +38,8 @@
 <h2>Generar 3D gratis (Hugging Face)</h2>
 <label>Espacio</label>
 <select id="hfSpace"><option value="sf3d">Stable Fast 3D (stabilityai)</option><option value="triposr">TripoSR (VAST-AI)</option></select>
-<label>Imagen JPG o PNG</label>
-<input type="file" id="hfImageFile" accept="image/jpeg,image/png,image/webp">
+<label>Imagen JPG o PNG (al elegirla se dispara el flujo)</label>
+<input type="file" id="importImage" accept="image/jpeg,image/png,image/webp">
 <button id="generateFreeAI">Generar 3D gratis</button>
 <div id="hfStatus" class="small" style="display:none"><span class="spinner"></span> Generando malla 3D, esto puede tardar unos segundos...</div>
 <p class="small">Sin clave y sin créditos. El Space público es compartido: puede tardar más que unos segundos si hay cola, estar pausado o cambiar su API. Si Stable Fast 3D falla, se intenta TripoSR automáticamente. El .glb resultante se inyecta en (0, 0, 0).</p>
@@ -91,6 +91,17 @@
 <button id="stopVideo">■ Detener y descargar</button>
 <span id="tracks" class="small"></span>
 </div>
+<script>
+  // Salvavidas v0.4: si un módulo (por ejemplo un CDN) falla antes de
+  // que la app arranque, el error no queda solo en la consola.
+  window.addEventListener('DOMContentLoaded', function () {
+    setTimeout(function () {
+      if (window.__estudioReady) return;
+      var log = document.getElementById('log');
+      if (log) log.textContent = 'Error: la app no terminó de cargar (posible fallo de CDN o de un módulo). Recarga la página y revisa la conexión.';
+    }, 10000);
+  });
+</script>
 <script type="module" src="js/main.js"></script>
 </body>
 </html>

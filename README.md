@@ -1,9 +1,10 @@
-# Estudio 3D — v0.3 gratuita HF
+# Estudio 3D — v0.4 QA
 
 ## Arquitectura
 
 La v0.1 monolítica quedó guardada en local como `index-v01.html` (no se sube a Pages).
-La v0.2 separó la lógica en módulos ES6 y la v0.3 añade el pipeline gratuito:
+La v0.2 separó la lógica en módulos ES6, la v0.3 añadió el pipeline gratuito
+y la v0.4 es la revisión QA que repara su integración:
 
 ```
 index.html        # Solo estructura y paneles
@@ -15,8 +16,38 @@ js/loaders.js     # Importar .glb/.gltf/.obj/.fbx y exportar .glb/.obj
 js/effects.js     # Primitivas, partículas, texto, rig simple, inflado
 js/ai3d.js        # Cliente de pago opcional (Meshy y Tripo v3)
 js/hf3d.js        # Cliente gratuito Hugging Face Spaces (nuevo)
+js/validate-image.js # Validación de imagen sin DOM, probada en Node
 js/timeline.js    # Keyframes, pistas y grabación WebM
 js/ui.js          # Enlaces de todos los controles del panel
+test/test-v04.mjs # Test Node de la v0.4 (ids, bindings, gradio lazy)
+```
+
+## v0.4 QA: qué se reparó y por qué
+
+Diagnóstico real de la v0.3:
+- No existía ningún `#importImage`. El campo se llamaba `hfImageFile`
+  y solo reaccionaba al botón, no al elegir la imagen.
+- `hf3d.js` importaba `@gradio/client` en la cabecera. Si ese CDN
+  fallaba, todo el grafo de módulos fallaba y la interfaz quedaba
+  muerta sin ningún mensaje en `#log`, solo en la consola oculta.
+- Los enlaces de `ui.js` no tenían protección si faltaba un id.
+
+Reparación:
+- `js/io.js` eliminado definitivamente del repositorio (en local
+  ya no existía desde el renombrado a `js/loaders.js`).
+- Nuevo campo `#importImage` con evento `change` que valida la
+  imagen y dispara el flujo automáticamente. El botón usa la misma
+  función, para reintentar.
+- `@gradio/client` se carga de forma perezosa dentro de `try/catch`,
+  con timeouts. Cualquier fallo (CDN, CORS, timeout, Space dormido
+  o API cambiada) se imprime en `#log` y en `#hfStatus`.
+- `main.js` espera a `DOMContentLoaded`, captura errores de arranque
+  en `#log` y marca la app como lista. Si no arranca en 10 s, el
+  propio HTML escribe el error en `#log`.
+- Verificación local: test Node aprobado, sintaxis aprobada y
+  servidor local 200. La verificación en navegador por localhost
+  no fue posible porque ese localhost es de la VM, no del navegador
+  de prueba, por lo que la v0.4 se verifica en Pages tras el push.
 ```
 
 Three.js se carga por importmap desde CDN (versión 0.160.0) y

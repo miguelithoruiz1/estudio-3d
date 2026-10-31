@@ -8,9 +8,25 @@ import { generate3DFromImage } from './ai3d.js';
 import { generateFree3DFromImage } from './hf3d.js';
 
 const $ = (id) => document.getElementById(id);
+// Enlace seguro: si falta un id, se deja constancia en #log en
+// lugar de romper initUI() entero con un TypeError en consola.
+function bind(id, event, handler) {
+  const el = $(id);
+  if (!el) { log('UI: falta el elemento #' + id + ', su control queda sin enlazar.'); return null; }
+  el.addEventListener(event, handler);
+  return el;
+}
+function required(id) {
+  const el = $(id);
+  if (!el) throw new Error('UI: falta el elemento #' + id + ' en index.html.');
+  return el;
+}
 
 export function initUI() {
-  setLogger((msg) => { $('log').textContent = msg; console.log(msg); });
+  setLogger((msg) => { const el = $('log'); if (el) el.textContent = msg; console.log(msg); });
+  // Errores no controlados también visibles en #log, no solo en consola.
+  window.addEventListener('error', (e) => { log('Error: ' + (e?.message || 'error desconocido')); });
+  window.addEventListener('unhandledrejection', (e) => { log('Error no controlado: ' + (e?.reason?.message || e?.reason || 'desconocido')); });
   state.onObjectsChange = updateTracks;
 
   $('addBox').onclick = () => addPrimitive('box');
@@ -54,26 +70,49 @@ export function initUI() {
   $('elbow').oninput = (e) => setElbow(+e.target.value);
 
   // --- Pipeline IA gratuito (Hugging Face, sin clave) ---
-  $('generateFreeAI').onclick = async () => {
+  // v0.4: el flujo se dispara desde #importImage (change) y también
+  // desde el botón, con la misma función, para que importar una
+  // imagen nunca quede sin reacción visible.
+  let hfGenerating = false;
+  async function startFreeGeneration() {
     const btn = $('generateFreeAI');
     const status = $('hfStatus');
-    btn.disabled = true;
-    status.style.display = 'block';
+    const file = $('importImage')?.files?.[0] || null;
+    if (!file) {
+      const msg = 'IA gratuita: elige primero una imagen JPG o PNG en el campo de importación.';
+      log(msg);
+      if (status) { status.style.display = 'block'; status.textContent = msg; }
+      return;
+    }
+    if (hfGenerating) { log('IA gratuita: ya hay una generación en curso.'); return; }
+    hfGenerating = true;
+    if (btn) btn.disabled = true;
+    if (status) status.style.display = 'block';
     try {
       await generateFree3DFromImage({
-        file: $('hfImageFile').files[0] || null,
-        space: $('hfSpace').value,
-        onProgress: (msg) => { status.innerHTML = '<span class="spinner"></span> ' + msg; log(msg); },
+        file,
+        space: $('hfSpace')?.value || 'sf3d',
+        onProgress: (msg) => {
+          if (status) status.innerHTML = '<span class="spinner"></span> ' + msg;
+          log(msg);
+        },
       });
     } catch (err) {
-      log('IA gratuita: ' + err.message);
-      status.textContent = 'Error: ' + err.message;
+      const msg = 'IA gratuita: ' + (err?.message || err);
+      log(msg);
+      if (status) status.textContent = 'Error: ' + (err?.message || err);
     } finally {
-      btn.disabled = false;
-      // El indicador se oculta en el siguiente intento; el texto
-      // queda visible como registro del último resultado.
+      hfGenerating = false;
+      if (btn) btn.disabled = false;
     }
-  };
+  }
+  bind('importImage', 'change', async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    log(`Imagen importada: ${file.name} (${file.type || 'tipo desconocido'}, ${Math.round(file.size / 1024)} KB). Iniciando generación gratuita…`);
+    await startFreeGeneration();
+  });
+  bind('generateFreeAI', 'click', startFreeGeneration);
 
   // --- Pipeline IA de pago (opcional, v0.2) ---
   $('generateAI').onclick = async () => {
