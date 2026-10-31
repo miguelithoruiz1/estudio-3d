@@ -6,6 +6,7 @@ import { addPrimitive, addParticles, addTextMotion, addArm, setShoulder, setElbo
 import { recordKeyframe, applyKeyframes, updateTracks, createVideoRecorder } from './timeline.js';
 import { generate3DFromImage } from './ai3d.js';
 import { generateFree3DFromImage } from './hf3d.js';
+import { getHfToken, saveHfToken, clearHfToken } from './hf-token.js';
 
 const $ = (id) => document.getElementById(id);
 // Enlace seguro: si falta un id, se deja constancia en #log en
@@ -69,7 +70,27 @@ export function initUI() {
   $('shoulder').oninput = (e) => setShoulder(+e.target.value);
   $('elbow').oninput = (e) => setElbow(+e.target.value);
 
-  // --- Pipeline IA gratuito (Hugging Face, sin clave) ---
+  // --- Pipeline IA gratuito (Hugging Face, con token Read) ---
+  // v0.5: el token vive solo en localStorage del navegador. Al
+  // arrancar se restaura en el campo de contraseña (oculto por
+  // type="password"), nunca se registra ni se muestra su valor.
+  // Escribir en el campo lo guarda; borrarlo lo elimina.
+  const hfTokenEl = $('hfToken');
+  if (hfTokenEl) {
+    const saved = getHfToken();
+    if (saved) hfTokenEl.value = saved;
+  }
+  bind('hfToken', 'change', (e) => {
+    const saved = saveHfToken(e.target.value);
+    log(saved
+      ? 'Token de Hugging Face guardado solo en tu navegador (localStorage).'
+      : 'Token de Hugging Face eliminado del navegador.');
+  });
+  bind('clearHfToken', 'click', () => {
+    clearHfToken();
+    if (hfTokenEl) hfTokenEl.value = '';
+    log('Token de Hugging Face borrado del navegador.');
+  });
   // v0.4: el flujo se dispara desde #importImage (change) y también
   // desde el botón, con la misma función, para que importar una
   // imagen nunca quede sin reacción visible.

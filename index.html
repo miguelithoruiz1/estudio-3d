@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Estudio 3D — v0.4 QA</title>
+<title>Estudio 3D — v0.5 Token</title>
 <link rel="stylesheet" href="styles.css">
 <script type="importmap">
 {"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/","@gradio/client":"https://cdn.jsdelivr.net/npm/@gradio/client/dist/index.min.js"}}
@@ -11,8 +11,8 @@
 </head>
 <body>
 <header>
-<h1>Estudio 3D <span class="badge">v0.4 QA</span></h1>
-<p>Escena, interfaz, importación/exportación, IA y timeline separados en módulos ES6. Generación gratuita por Hugging Face Spaces, sin clave, con errores visibles en el panel de registro.</p>
+<h1>Estudio 3D <span class="badge">v0.5 Token</span></h1>
+<p>Escena, interfaz, importación/exportación, IA y timeline separados en módulos ES6. Generación gratuita por Hugging Face Spaces con token Read del usuario, guardado solo en su navegador, con errores visibles en el panel de registro.</p>
 </header>
 <div class="layout">
 <aside>
@@ -38,11 +38,15 @@
 <h2>Generar 3D gratis (Hugging Face)</h2>
 <label>Espacio</label>
 <select id="hfSpace"><option value="sf3d">Stable Fast 3D (stabilityai)</option><option value="triposr">TripoSR (VAST-AI)</option></select>
+<label>Hugging Face Token (Read)</label>
+<input type="password" id="hfToken" placeholder="hf_…" autocomplete="off">
+<button id="clearHfToken">Borrar token guardado</button>
+<p class="small">Al escribirlo se guarda solo en el localStorage de tu navegador. Nunca se escribe en el repositorio, nunca se muestra en el registro y nunca se envía a otro destino que la conexión con el Space elegido. Sin token, la generación se detiene con una advertencia en el registro. Consigue un token de lectura en huggingface.co/settings/tokens.</p>
 <label>Imagen JPG o PNG (al elegirla se dispara el flujo)</label>
 <input type="file" id="importImage" accept="image/jpeg,image/png,image/webp">
 <button id="generateFreeAI">Generar 3D gratis</button>
 <div id="hfStatus" class="small" style="display:none"><span class="spinner"></span> Generando malla 3D, esto puede tardar unos segundos...</div>
-<p class="small">Sin clave y sin créditos. El Space público es compartido: puede tardar más que unos segundos si hay cola, estar pausado o cambiar su API. Si Stable Fast 3D falla, se intenta TripoSR automáticamente. El .glb resultante se inyecta en (0, 0, 0).</p>
+<p class="small">El Space público es compartido: puede tardar más que unos segundos si hay cola, estar pausado o cambiar su API. Si Stable Fast 3D falla, se intenta TripoSR automáticamente. El .glb resultante se inyecta en (0, 0, 0).</p>
 
 <h2>Generar 3D con IA (de pago, opcional)</h2>
 <label>Proveedor</label>

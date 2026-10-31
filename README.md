@@ -1,10 +1,11 @@
-# Estudio 3D — v0.4 QA
+# Estudio 3D — v0.5 Token
 
 ## Arquitectura
 
 La v0.1 monolítica quedó guardada en local como `index-v01.html` (no se sube a Pages).
-La v0.2 separó la lógica en módulos ES6, la v0.3 añadió el pipeline gratuito
-y la v0.4 es la revisión QA que repara su integración:
+La v0.2 separó la lógica en módulos ES6, la v0.3 añadió el pipeline gratuito,
+la v0.4 es la revisión QA que repara su integración y la v0.5 añade
+autenticación segura con token de Hugging Face:
 
 ```
 index.html        # Solo estructura y paneles
@@ -16,10 +17,38 @@ js/loaders.js     # Importar .glb/.gltf/.obj/.fbx y exportar .glb/.obj
 js/effects.js     # Primitivas, partículas, texto, rig simple, inflado
 js/ai3d.js        # Cliente de pago opcional (Meshy y Tripo v3)
 js/hf3d.js        # Cliente gratuito Hugging Face Spaces (nuevo)
+js/hf-token.js    # Token Read: solo localStorage, nunca en el repo (v0.5)
 js/validate-image.js # Validación de imagen sin DOM, probada en Node
 js/timeline.js    # Keyframes, pistas y grabación WebM
 js/ui.js          # Enlaces de todos los controles del panel
 test/test-v04.mjs # Test Node de la v0.4 (ids, bindings, gradio lazy)
+test/test-v05.mjs # Test Node de la v0.5 (password, localStorage, hf_token)
+```
+
+## v0.5 Token: autenticación segura del lado del cliente
+
+La v0.4 validó que la interfaz reacciona, pero la generación falló
+con 401: el Space TripoSR no se puede acceder sin token. La v0.5
+lo resuelve sin tocar la seguridad del repositorio:
+
+- Nuevo campo `<input type="password" id="hfToken">` en la sección
+  de generación gratuita, etiquetado "Hugging Face Token (Read)".
+- Al escribirlo se guarda solo en `localStorage` del navegador
+  (`estudio3d_hf_token`). Al borrarlo, o con el botón "Borrar token
+  guardado", se elimina. Al recargar, el campo se restaura oculto
+  por ser de tipo contraseña.
+- `hf3d.js` lee ese token y lo pasa a
+  `Client.connect(space, { hf_token: token })`, tanto para Stable
+  Fast 3D como para TripoSR. El token nunca se registra en `#log`,
+  en `#hfStatus` ni en la consola.
+- Sin token, la generación se detiene antes de llamar a ningún
+  Space y muestra en `#log` una advertencia pidiéndolo.
+- Guardrail verificado por test: ningún archivo subido contiene
+  un token hardcodeado, variables de entorno simuladas ni
+  credenciales. El usuario debe crear su propio token de lectura
+  en huggingface.co/settings/tokens y pegarlo en su navegador;
+  ese token nunca llega a este asistente ni al repositorio.
+```
 ```
 
 ## v0.4 QA: qué se reparó y por qué

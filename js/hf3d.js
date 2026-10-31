@@ -3,6 +3,7 @@ import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { scene, register } from './scene.js';
 import { log } from './store.js';
 import { validateImageMeta, getImageDimensions } from './validate-image.js';
+import { getHfToken } from './hf-token.js';
 
 // v0.4: @gradio/client YA NO se importa en la cabecera.
 // En v0.3 un fallo de ese CDN rompía todo el grafo de módulos y la
@@ -105,10 +106,10 @@ async function loadGlbFromUrlAtOrigin(url, name) {
   }
 }
 
-async function generateWithStableFast3D(file, onProgress, gradio) {
+async function generateWithStableFast3D(file, onProgress, gradio, hfToken) {
   const { Client, handle_file } = gradio;
   onProgress('Conectando con stabilityai/stable-fast-3d…');
-  const client = await withTimeout(Client.connect('stabilityai/stable-fast-3d'), 60000, 'Conexión con Stable Fast 3D');
+  const client = await withTimeout(Client.connect('stabilityai/stable-fast-3d', { hf_token: hfToken }), 60000, 'Conexión con Stable Fast 3D');
   const image = await handle_file(file);
   try {
     await withTimeout(client.predict('/requires_bg_remove', { image, fr: 0.85 }), 60000, 'Stable Fast 3D /requires_bg_remove');
@@ -135,10 +136,10 @@ async function generateWithStableFast3D(file, onProgress, gradio) {
   return glbUrl;
 }
 
-async function generateWithTripoSR(file, onProgress, gradio) {
+async function generateWithTripoSR(file, onProgress, gradio, hfToken) {
   const { Client, handle_file } = gradio;
   onProgress('Conectando con VAST-AI/TripoSR…');
-  const client = await withTimeout(Client.connect('VAST-AI/TripoSR'), 60000, 'Conexión con TripoSR');
+  const client = await withTimeout(Client.connect('VAST-AI/TripoSR', { hf_token: hfToken }), 60000, 'Conexión con TripoSR');
   const image = await handle_file(file);
   onProgress('Generando malla 3D, esto puede tardar unos segundos...');
   let result = null;
@@ -177,18 +178,24 @@ export async function generateFree3DFromImage({ file, space = 'sf3d', onProgress
   }
   const dimError = validateImageMeta({ type: file.type, width: dims.width, height: dims.height });
   if (dimError) throw new Error(dimError);
+  // v0.5: sin token no se llama a ningún Space. La advertencia sale
+  // por #log y #hfStatus a través de la UI, y nunca incluye el token.
+  const hfToken = getHfToken();
+  if (!hfToken) {
+    throw new Error('Falta el Hugging Face Token (Read). Ingrésalo en el campo de contraseña de la sección de generación gratuita: se guarda solo en el localStorage de tu navegador y nunca se escribe en el repositorio.');
+  }
   onProgress(`Imagen importada: ${file.name} (${dims.width}x${dims.height}). Generando malla 3D, esto puede tardar unos segundos...`);
   const gradio = await loadGradioClient(onProgress);
   let glbUrl;
   try {
     glbUrl = space === 'triposr'
-      ? await generateWithTripoSR(file, onProgress, gradio)
-      : await generateWithStableFast3D(file, onProgress, gradio);
+      ? await generateWithTripoSR(file, onProgress, gradio, hfToken)
+      : await generateWithStableFast3D(file, onProgress, gradio, hfToken);
   } catch (err) {
     if (space === 'triposr') throw err;
     onProgress('Stable Fast 3D falló, intentando TripoSR como alternativa gratuita…');
     log('HF SF3D: ' + (err?.message || err));
-    glbUrl = await generateWithTripoSR(file, onProgress, gradio);
+    glbUrl = await generateWithTripoSR(file, onProgress, gradio, hfToken);
   }
   onProgress('Malla lista. Cargando el .glb en (0, 0, 0)…');
   const obj = await loadGlbFromUrlAtOrigin(glbUrl, 'Modelo IA gratuito (HF)');
