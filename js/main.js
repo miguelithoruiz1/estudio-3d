@@ -1,10 +1,10 @@
 import * as THREE from 'three';
-import { initScene, renderer, scene, camera, controls, resize, syncSelectionHelper } from './scene.js';
-import { state, log } from './store.js';
-import { initUI } from './ui.js';
-import { initVFX, renderVFX, syncVFXSize, isVFXReady, getBloomState } from './vfx.js';
-import { updateEffects, addPrimitive } from './effects.js';
-import { updateTracks } from './timeline.js';
+import { initScene, renderer, scene, camera, controls, resize, syncSelectionHelper } from './scene.js?v=0.12';
+import { state, log } from './store.js?v=0.12';
+import { initUI } from './ui.js?v=0.12';
+import { initVFX, renderVFX, syncVFXSize, isVFXReady, getBloomState } from './vfx.js?v=0.12';
+import { updateEffects, addPrimitive } from './effects.js?v=0.12';
+import { updateTracks } from './timeline.js?v=0.12';
 
 function start() {
   try {
@@ -45,7 +45,12 @@ function start() {
     addPrimitive('box');
     state.objects[state.objects.length - 1].name = 'Cubo inicial';
     updateTracks();
-    log('Listo v0.11' + (isVFXReady() ? ` (Bloom ${getBloomState().enabled ? 'activo' : 'inactivo'}, strength ${getBloomState().strength}).` : ' (VFX no disponible, render directo).') + ' Añade objetos, importa un modelo o genera uno gratis con Hugging Face (necesita tu token Read, guardado solo en tu navegador).');
+    // v0.12: el log de inicio debe decir claramente que el motor
+    // VFX está activo; solo si initVFX falló se dice lo contrario,
+    // para no afirmar un VFX que no se inicializó.
+    log(isVFXReady()
+      ? `Listo v0.12. Motor VFX activo. (Bloom ${getBloomState().enabled ? 'activo' : 'inactivo'}, strength ${getBloomState().strength}). Añade objetos, importa un modelo o genera uno gratis con Hugging Face (necesita tu token Read, guardado solo en tu navegador).`
+      : 'Listo v0.12. Motor VFX no disponible, render directo. Añade objetos, importa un modelo o genera uno gratis con Hugging Face (necesita tu token Read, guardado solo en tu navegador).');
     window.__estudioReady = true;
     animate();
   } catch (err) {

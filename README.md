@@ -1,4 +1,4 @@
-# Estudio 3D — v0.11 VFX
+# Estudio 3D — v0.12 Cache Busting
 
 ## Arquitectura
 
@@ -10,7 +10,8 @@ post-procesamiento espacial para las mallas inyectadas, la v0.7
 añade Outliner e inspector de materiales granular, la v0.8
 sincroniza dinámicamente el BoxHelper de selección, la v0.9
 añade iluminación HDRI (IBL), la v0.10 añade render final PNG
-y la v0.11 añade post-procesamiento VFX con Bloom:
+la v0.11 añade post-procesamiento VFX con Bloom y la v0.12
+añade cache busting con query string de versión:
 
 ```
 index.html        # Solo estructura y paneles
@@ -38,6 +39,44 @@ js/snapshot.js    # Render final PNG: supersampling 2x/4x, alfa, restaurar (v0.1
 test/test-v10.mjs # Test Node de la v0.10 (botón, alfa, supersampling, restaurar)
 js/vfx.js       # Post-procesamiento: EffectComposer + Bloom + OutputPass (v0.11)
 test/test-v11.mjs # Test Node de la v0.11 (composer, Bloom, panel VFX, Snapshot Sync)
+test/test-v12.mjs # Test Node de la v0.12 (cache busting ?v=0.12, log v0.12)
+```
+
+## v0.12 Cache Busting: invalidación de caché controlada
+
+- `index.html`: entrada `js/main.js?v=0.12` y CSS
+  `styles.css?v=0.12`. El título y el badge pasan a v0.12.
+- **Punto crítico:** versionar solo la entrada NO basta. En ES
+  Modules, una importación relativa `'./scene.js'` resuelta
+  desde `'js/main.js?v=0.12'` pierde el query string y queda
+  como `'js/scene.js'`, así que el navegador seguiría sirviendo
+  los módulos internos viejos en caché. Por eso la versión se
+  aplicó a **las 36 importaciones locales** en los 11 módulos
+  que importan otros módulos locales (por ejemplo,
+  `'./scene.js?v=0.12'`, `'./vfx.js?v=0.12'`). Con URLs
+  distintas a las de la v0.11, el navegador no puede reutilizar
+  la caché vieja: debe descargar los módulos nuevos.
+- Importaciones externas (three, three/addons, @gradio/client)
+  NO llevan la versión local: van por importmap con su versión
+  fijada (three 0.160.0) y la única importación dinámica local
+  no existe; la única dinámica es `@gradio/client`, externa.
+- Log de inicio en `main.js`: en el caso normal (VFX
+  inicializado) empieza exactamente con
+  "Listo v0.12. Motor VFX activo.", seguido del estado del Bloom
+  y las instrucciones. Solo si `initVFX()` falló se dice lo
+  contrario, para no afirmar un VFX que no se inicializó.
+- Convención a partir de ahora: en cada iteración mayor se
+  incrementa el query string (`?v=0.13`, `?v=0.14`, …) en la
+  entrada, el CSS y **todas** las importaciones locales, no solo
+  en la entrada. El test `test-v12.mjs` verifica que no quede
+  ninguna importación local sin versión.
+- Prueba local: test v0.12 aprobado (36 importaciones
+  versionadas, 0 sin versión), sintaxis aprobada, servidor local
+  200 para `index.html`, `js/main.js?v=0.12` y
+  `js/scene.js?v=0.12`, con el texto del log servido. El test
+  v0.11 antiguo falla solo por la cadena de versión (esperado,
+  no es regresión).
+```
 ```
 
 ## v0.11 VFX: post-procesamiento con Bloom, sin romper el snapshot
