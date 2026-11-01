@@ -24,6 +24,13 @@ label{font-size:12px;color:#9fb0c8;display:block;margin-top:8px}
 .spinner{display:inline-block;width:14px;height:14px;border:2px solid #2c3a52;border-top-color:#00e5ff;border-radius:50%;animation:spin 0.8s linear infinite;vertical-align:-2px;margin-right:6px}
 @keyframes spin{to{transform:rotate(360deg)}}
 @media(max-width:800px){.layout{grid-template-columns:1fr} aside{order:2}}
+/* v0.15: aviso de compatibilidad AR al abrir, antes del botón AR.
+   Visible en el flujo de la página (no sobre el viewport), para
+   que se lea al cargar sin tapar la escena. Se oculta en sesión
+   AR junto a header/aside/timeline. */
+#arCompat{margin:12px 16px 0;padding:10px 14px;border-radius:10px;font-size:13px;line-height:1.5;background:#101826;border:1px solid #2c3a52;color:#e8eef6}
+#arCompat[data-status="available"]{border-color:#00e5ff}
+#arCompat[data-status="unsupported"],#arCompat[data-status="insecure"],#arCompat[data-status="unknown"]{border-color:#ff2e88}
 /* v0.14: capa DOM Overlay para AR. Oculta fuera de sesión (la
    muestra initAR en sessionstart). touch-action:none evita que
    el navegador intercepte el pinch con su propio zoom/scroll. */

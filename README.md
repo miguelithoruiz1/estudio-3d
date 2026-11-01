@@ -1,4 +1,4 @@
-# Estudio 3D — v0.14 Gestos AR
+# Estudio 3D — v0.15 Aviso AR
 
 ## Arquitectura
 
@@ -12,8 +12,9 @@ sincroniza dinámicamente el BoxHelper de selección, la v0.9
 añade iluminación HDRI (IBL), la v0.10 añade render final PNG
 la v0.11 añade post-procesamiento VFX con Bloom, la v0.12
 añade cache busting con query string de versión y la v0.13
-añade AR WebXR con hit-test y la v0.14 añade gestos
-multitáctiles en AR:
+añade AR WebXR con hit-test, la v0.14 añade gestos
+multitáctiles en AR y la v0.15 añade el aviso de
+compatibilidad AR al abrir:
 
 ```
 index.html        # Solo estructura y paneles
@@ -45,7 +46,16 @@ test/test-v12.mjs # Test Node de la v0.12 (cache busting ?v=0.12, log v0.12)
 js/ar.js       # WebXR AR: retículo, hit-test, anclaje, paneles sessionstart/end (v0.13)
 test/test-v13.mjs # Test Node de la v0.13 (XR, ARButton, retículo, anclaje, cache busting)
 test/test-v14.mjs # Test Node de la v0.14 (dom-overlay, pinch, twist, clamp, cache busting)
+js/ar-compat.js # Aviso AR al abrir: HTTPS + immersive-ar, alternativa visor 3D (v0.15)
+test/test-v15.mjs # Test Node de la v0.15 (aviso AR, ramas compatible/no compatible/sin HTTPS)
 ```
+
+## v0.15 Aviso AR: compatibilidad al abrir, antes del botón AR
+
+- Al cargar, `js/ar-compat.js` comprueba solo dos cosas: página segura (HTTPS) y sesión WebXR `immersive-ar` disponible. No se lee ningún otro dato del dispositivo.
+- El aviso `#arCompat` aparece en la página antes de pulsar el botón AR. Si AR está disponible, dice que pulses AR y cómo colocar el modelo. Si no está disponible, dice que AR no está disponible y nombra la alternativa concreta: el visor 3D de la misma página (girar, acercar, mover) o descargar una imagen PNG.
+- En sesión AR, `#arCompat` se oculta junto a header, aside y timeline, y se restaura al salir. Los gestos v0.14 (pinch, twist, 1 toque) quedan intactos.
+- Prueba local: test v0.15 aprobado (ramas compatible, no compatible y sin HTTPS, con navegadores simulados), sintaxis ES6 aprobada, servidor local 200. La prueba real en un teléfono queda para el usuario: un resultado de escritorio nunca se presenta como resultado del teléfono.
 
 ## v0.14 Gestos AR: pinch, twist y reposicionamiento con 1 toque
 

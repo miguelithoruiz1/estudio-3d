@@ -1,18 +1,24 @@
 import * as THREE from 'three';
-import { initScene, renderer, scene, camera, controls, resize, syncSelectionHelper } from './scene.js?v=0.14';
-import { state, log } from './store.js?v=0.14';
-import { initUI } from './ui.js?v=0.14';
-import { initVFX, renderVFX, syncVFXSize, isVFXReady, getBloomState } from './vfx.js?v=0.14';
-import { updateEffects, addPrimitive } from './effects.js?v=0.14';
-import { updateTracks } from './timeline.js?v=0.14';
+import { initScene, renderer, scene, camera, controls, resize, syncSelectionHelper } from './scene.js?v=0.15';
+import { state, log } from './store.js?v=0.15';
+import { initUI } from './ui.js?v=0.15';
+import { initVFX, renderVFX, syncVFXSize, isVFXReady, getBloomState } from './vfx.js?v=0.15';
+import { updateEffects, addPrimitive } from './effects.js?v=0.15';
+import { updateTracks } from './timeline.js?v=0.15';
 import { ARButton } from 'three/addons/webxr/ARButton.js';
-import { initAR, updateARHitTest, isARSessionActive } from './ar.js?v=0.14';
+import { initAR, updateARHitTest, isARSessionActive } from './ar.js?v=0.15';
+import { initARCompat } from './ar-compat.js?v=0.15';
 
 function start() {
   try {
     const canvas = document.getElementById('viewport');
     if (!canvas) throw new Error('No se encontró el canvas #viewport.');
     initScene(canvas);
+    // v0.15: aviso de compatibilidad AR al abrir, ANTES del botón
+    // AR y de cualquier intento de sesión. No fatal: si la
+    // comprobación falla, el botón AR sigue mostrando su propio
+    // estado ("AR NOT SUPPORTED" en escritorio) y la app arranca.
+    try { initARCompat(); } catch (compatErr) { console.warn('Aviso AR no disponible:', compatErr); }
     // v0.13: WebXR AR. renderer.xr.enabled = true es obligatorio
     // para sesiones inmersivas; ARButton con hit-test crea la
     // sesión. En escritorio sin AR, el botón muestra
@@ -83,10 +89,10 @@ function start() {
     addPrimitive('box');
     state.objects[state.objects.length - 1].name = 'Cubo inicial';
     updateTracks();
-    // v0.14: log de inicio con la versión y el estado AR/VFX.
+    // v0.15: log de inicio con la versión y el estado AR/VFX.
     log(isVFXReady()
-      ? `Listo v0.14. Motor VFX activo, AR WebXR listo (botón AR con hit-test y gestos multitáctiles). (Bloom ${getBloomState().enabled ? 'activo' : 'inactivo'}, strength ${getBloomState().strength}). Añade objetos, importa un modelo o genera uno gratis con Hugging Face (necesita tu token Read, guardado solo en tu navegador).`
-      : 'Listo v0.14. Motor VFX no disponible, render directo, AR WebXR listo (botón AR con hit-test y gestos multitáctiles). Añade objetos, importa un modelo o genera uno gratis con Hugging Face (necesita tu token Read, guardado solo en tu navegador).');
+      ? `Listo v0.15. Motor VFX activo, AR WebXR listo (botón AR con hit-test y gestos multitáctiles, aviso de compatibilidad AR al abrir). (Bloom ${getBloomState().enabled ? 'activo' : 'inactivo'}, strength ${getBloomState().strength}). Añade objetos, importa un modelo o genera uno gratis con Hugging Face (necesita tu token Read, guardado solo en tu navegador).`
+      : 'Listo v0.15. Motor VFX no disponible, render directo, AR WebXR listo (botón AR con hit-test y gestos multitáctiles, aviso de compatibilidad AR al abrir). Añade objetos, importa un modelo o genera uno gratis con Hugging Face (necesita tu token Read, guardado solo en tu navegador).');
     window.__estudioReady = true;
     renderer.setAnimationLoop(animate);
   } catch (err) {

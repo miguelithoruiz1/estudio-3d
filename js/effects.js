@@ -1,6 +1,6 @@
 import * as THREE from 'three';
-import { register, standardMaterial } from './scene.js?v=0.14';
-import { state, log } from './store.js?v=0.14';
+import { register, standardMaterial } from './scene.js?v=0.15';
+import { state, log } from './store.js?v=0.15';
 
 export function addPrimitive(kind) {
   let geo;

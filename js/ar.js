@@ -35,8 +35,8 @@
 //   pantalla del móvil durante la inmersión.
 
 import * as THREE from 'three';
-import { scene, gridHelper, refreshSelectionHelper } from './scene.js?v=0.14';
-import { state, log } from './store.js?v=0.14';
+import { scene, gridHelper, refreshSelectionHelper } from './scene.js?v=0.15';
+import { state, log } from './store.js?v=0.15';
 
 let xrRenderer = null;
 let reticle = null;
@@ -190,7 +190,9 @@ function onARSelect() {
 
 function hidePanelsForAR() {
   savedUIDisplays = [];
-  for (const el of document.querySelectorAll('aside, header, .timeline')) {
+  // v0.15: el aviso #arCompat también se oculta en sesión, para
+  // que no tape la cámara real; se restaura en sessionend.
+  for (const el of document.querySelectorAll('aside, header, .timeline, #arCompat')) {
     savedUIDisplays.push([el, el.style.display]);
     el.style.display = 'none';
   }
