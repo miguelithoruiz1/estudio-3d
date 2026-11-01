@@ -1,4 +1,4 @@
-# Estudio 3D — v0.19 Pellizco AR de vuelta
+# Estudio 3D — v0.20 Escala AR con botones
 
 ## Arquitectura
 
@@ -52,7 +52,16 @@ test/test-v16.mjs # Test Node de la v0.16 (estado AR en sesión, reintento hit-t
 test/test-v17.mjs # Test Node de la v0.17 (sin dom-overlay, hit-test + select + respaldo)
 test/test-v18.mjs # Test Node de la v0.18 (ajuste a 30 cm + restaurar, 1 unidad = 1 metro)
 test/test-v19.mjs # Test Node de la v0.19 (dom-overlay corregido, pellizco + giro)
+test/test-v20.mjs # Test Node de la v0.20 (botones + / − en AR, pellizco con texto de escala, tamaños predefinidos)
 ```
+
+## v0.20 Escala AR con botones: si el pellizco no llega, hay otro camino
+
+- Reporte del usuario tras v0.19: el pellizco sigue sin funcionar. Sin diagnóstico en vivo, hay tres causas posibles: caché (badge viejo), capa no activa (sin texto de ayuda en sesión), o el navegador no entrega el multitáctil a la capa.
+- Nuevo en sesión: botones "− Achicar" y "Agrandar +" en la parte inferior de la capa AR, que escalan ×0,8 / ×1,25 con el mismo clamp 0,1–10. Los toques sobre esos botones no colocan el modelo.
+- Nuevo diagnóstico: al pellizcar, el texto de ayuda muestra la escala en vivo ("Escala: 0,25"). Si al pellizcar ese texto no cambia, el navegador no está entregando el multitáctil y hay que usar los botones.
+- Nuevo antes de AR: tamaños predefinidos 10 cm, 30 cm, 50 cm y 1 m en "Objeto seleccionado", que funcionan aunque el pellizco en sesión no llegue.
+- Escaneo (js/scan.js) queda como borrador local sin publicar en v0.20, para no mezclarlo con la corrección del pellizco; se retoma en v0.21 tras confirmar la escala en AR.
 
 ## v0.19 Pellizco AR de vuelta: dom-overlay corregido
 

@@ -53,8 +53,8 @@
 //   pantalla del móvil durante la inmersión.
 
 import * as THREE from 'three';
-import { scene, gridHelper, refreshSelectionHelper } from './scene.js?v=0.19';
-import { state, log } from './store.js?v=0.19';
+import { scene, gridHelper, refreshSelectionHelper } from './scene.js?v=0.20';
+import { state, log } from './store.js?v=0.20';
 
 let xrRenderer = null;
 let reticle = null;
@@ -106,8 +106,27 @@ function resetPinchState() {
   pinchInitialScale = null;
 }
 
+// v0.20: escala por botones en sesión, como respaldo del
+// pellizco. Si el navegador no entrega el multitáctil a la
+// capa, los botones + / − siguen escalando el modelo. Los
+// toques sobre un botón no colocan el modelo: el touchstart
+// que nace en un botón se ignora para colocar.
+function scaleSelectedBy(factor) {
+  const placeable = getPlaceableObject(state.selected);
+  if (!placeable) return;
+  placeable.scale.set(
+    THREE.MathUtils.clamp(placeable.scale.x * factor, 0.1, 10),
+    THREE.MathUtils.clamp(placeable.scale.y * factor, 0.1, 10),
+    THREE.MathUtils.clamp(placeable.scale.z * factor, 0.1, 10),
+  );
+  placeable.updateMatrixWorld(true);
+  if (state.selected) refreshSelectionHelper();
+  setARHint(`Escala: ${placeable.scale.x.toFixed(2)} — pellizca o usa + / −.`);
+}
+
 function onTouchStart(e) {
   if (!isARSessionActive()) return;
+  if (e.target && e.target.closest && e.target.closest('button')) return;
   if (e.touches.length === 2) {
     const placeable = getPlaceableObject(state.selected);
     if (!placeable) return;
@@ -124,6 +143,7 @@ function onTouchStart(e) {
 
 function onTouchMove(e) {
   if (!isARSessionActive()) return;
+  if (e.target && e.target.closest && e.target.closest('button')) return;
   // touch-action:none en CSS + preventDefault con passive:false
   // evitan que el navegador robe el gesto con su zoom/scroll.
   e.preventDefault();
@@ -154,6 +174,11 @@ function onTouchMove(e) {
     pinchPreviousAngle = currentAngle;
     placeable.updateMatrixWorld(true);
     if (state.selected) refreshSelectionHelper();
+    // v0.20: diagnóstico visible. Si el pellizco llega a la
+    // capa, el texto cambia con la escala; si el texto no
+    // cambia al pellizcar, el navegador no está entregando el
+    // multitáctil y hay que usar los botones + / −.
+    setARHint(`Escala: ${placeable.scale.x.toFixed(2)} — pellizca o usa + / −.`);
   } else if (e.touches.length === 1) {
     // 1 toque en movimiento: reposicionar dinámicamente mientras
     // el retículo siga visible sobre una superficie física.
@@ -266,6 +291,8 @@ function onSessionStart() {
     overlay.style.pointerEvents = 'auto';
     const h = overlay.querySelector('.hint');
     if (h) h.style.opacity = '1';
+    const c = overlay.querySelector('.ar-controls');
+    if (c) c.style.opacity = '1';
   }
   sessionStartAt = Date.now();
   lastViewerMatrix = null;
@@ -287,6 +314,8 @@ function onSessionEnd() {
     overlay.style.pointerEvents = 'none';
     const h = overlay.querySelector('.hint');
     if (h) { h.style.opacity = '0'; h.textContent = 'Toca para colocar • Pellizca para escalar • Gira con dos dedos para rotar'; }
+    const c = overlay.querySelector('.ar-controls');
+    if (c) c.style.opacity = '0';
   }
   lastHintText = '';
   resetPinchState();
@@ -322,6 +351,13 @@ export function initAR(renderer, targetScene) {
     overlay.addEventListener('touchend', onTouchEnd);
     overlay.addEventListener('touchcancel', onTouchEnd);
   }
+  // v0.20: botones de escala en sesión. Se conectan una vez
+  // aquí, no en sessionstart, para que existan antes de que
+  // Chrome tome la capa como overlay.
+  const up = document.getElementById('arScaleUp');
+  if (up) up.onclick = () => { if (isARSessionActive()) scaleSelectedBy(1.25); };
+  const down = document.getElementById('arScaleDown');
+  if (down) down.onclick = () => { if (isARSessionActive()) scaleSelectedBy(0.8); };
   return { reticle, controller };
 }
 
