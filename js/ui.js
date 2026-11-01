@@ -1,16 +1,16 @@
 import * as THREE from 'three';
-import { state, setLogger, log } from './store.js?v=0.17';
-import { scene, renderer, register, setTransformMode, removeSelected, duplicateSelected, applyMaterial } from './scene.js?v=0.17';
-import { loadModelFile, exportGLB, exportOBJ, download } from './loaders.js?v=0.17';
-import { addPrimitive, addParticles, addTextMotion, addArm, setShoulder, setElbow, inflateSelected } from './effects.js?v=0.17';
-import { recordKeyframe, applyKeyframes, updateTracks, createVideoRecorder } from './timeline.js?v=0.17';
-import { generate3DFromImage } from './ai3d.js?v=0.17';
-import { generateFree3DFromImage } from './hf3d.js?v=0.17';
-import { getHfToken, saveHfToken, clearHfToken } from './hf-token.js?v=0.17';
-import { refreshOutliner } from './outliner.js?v=0.17';
-import { loadEnvironmentFile, setEnvironmentBackground } from './environment.js?v=0.17';
-import { renderSnapshot } from './snapshot.js?v=0.17';
-import { setBloomEnabled, setBloomStrength, getBloomState, isVFXReady } from './vfx.js?v=0.17';
+import { state, setLogger, log } from './store.js?v=0.18';
+import { scene, renderer, register, setTransformMode, removeSelected, duplicateSelected, applyMaterial, fitSelectedToSize, restoreSelectedScale } from './scene.js?v=0.18';
+import { loadModelFile, exportGLB, exportOBJ, download } from './loaders.js?v=0.18';
+import { addPrimitive, addParticles, addTextMotion, addArm, setShoulder, setElbow, inflateSelected } from './effects.js?v=0.18';
+import { recordKeyframe, applyKeyframes, updateTracks, createVideoRecorder } from './timeline.js?v=0.18';
+import { generate3DFromImage } from './ai3d.js?v=0.18';
+import { generateFree3DFromImage } from './hf3d.js?v=0.18';
+import { getHfToken, saveHfToken, clearHfToken } from './hf-token.js?v=0.18';
+import { refreshOutliner } from './outliner.js?v=0.18';
+import { loadEnvironmentFile, setEnvironmentBackground } from './environment.js?v=0.18';
+import { renderSnapshot } from './snapshot.js?v=0.18';
+import { setBloomEnabled, setBloomStrength, getBloomState, isVFXReady } from './vfx.js?v=0.18';
 
 const $ = (id) => document.getElementById(id);
 // Enlace seguro: si falta un id, se deja constancia en #log en
@@ -108,6 +108,16 @@ export function initUI() {
   $('exportOBJ').onclick = exportOBJ;
 
   document.querySelectorAll('[data-mode]').forEach((b) => { b.onclick = () => setTransformMode(b.dataset.mode); });
+  // v0.18: ajuste de tamaño para AR, antes de entrar a la sesión.
+  $('fitAR30').onclick = () => {
+    const r = fitSelectedToSize(0.3);
+    if (!r) { log('Elige primero un objeto para ajustar a 30 cm.'); return; }
+    log(`Ajustado para AR: de ${r.longest.toFixed(2)} m a 0,30 m (factor ${r.factor.toFixed(3)}). Entra a AR y colócalo con un toque.`);
+  };
+  $('restoreARScale').onclick = () => {
+    if (restoreSelectedScale()) log('Tamaño original restaurado.');
+    else log('Este objeto no tiene un tamaño original guardado para restaurar.');
+  };
   window.addEventListener('keydown', (e) => {
     if (e.key === 'w') setTransformMode('translate');
     if (e.key === 'e') setTransformMode('rotate');

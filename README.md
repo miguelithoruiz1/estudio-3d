@@ -1,4 +1,4 @@
-# Estudio 3D — v0.17 Cámara AR sin capa
+# Estudio 3D — v0.18 Tamaño AR 30 cm
 
 ## Arquitectura
 
@@ -50,7 +50,14 @@ js/ar-compat.js # Aviso AR al abrir: HTTPS + immersive-ar, alternativa visor 3D 
 test/test-v15.mjs # Test Node de la v0.15 (aviso AR, ramas compatible/no compatible/sin HTTPS)
 test/test-v16.mjs # Test Node de la v0.16 (estado AR en sesión, reintento hit-test, respaldo frente a cámara)
 test/test-v17.mjs # Test Node de la v0.17 (sin dom-overlay, hit-test + select + respaldo)
+test/test-v18.mjs # Test Node de la v0.18 (ajuste a 30 cm + restaurar, 1 unidad = 1 metro)
 ```
+
+## v0.18 Tamaño AR 30 cm: el cubo no es un error, es de 1,5 m
+
+- En WebXR, 1 unidad = 1 metro real. El cubo por defecto mide 1,5 x 1,5 x 1,5, así que en el cuarto llena la vista, aunque en el visor se vea normal (la cámara está a ~9 unidades).
+- Nuevo, antes de entrar a AR, en "Objeto seleccionado": botón "Ajustar a 30 cm para AR" (deja el lado mayor en 0,30 m, guarda la escala original) y "Volver a tamaño original". Dentro de la sesión no hay botones y el pinch sigue pausado desde v0.17, por eso el ajuste es previo.
+- Prueba real en el teléfono del usuario pendiente.
 
 ## v0.17 Cámara AR sin capa: quitar dom-overlay
 

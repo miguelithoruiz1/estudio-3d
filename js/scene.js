@@ -2,7 +2,7 @@ import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { TransformControls } from 'three/addons/controls/TransformControls.js';
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
-import { state, log, notifyObjectsChange } from './store.js?v=0.17';
+import { state, log, notifyObjectsChange } from './store.js?v=0.18';
 
 export let renderer, scene, camera, controls, transform, gridHelper;
 export let initialEnvironment = null;
@@ -243,6 +243,39 @@ export function removeSelected() {
   select(null);
   notifyObjectsChange();
   log('Objeto eliminado.');
+}
+
+// v0.18: Tamaño en AR. En WebXR, 1 unidad = 1 metro real, así
+// que el cubo por defecto (1,5 x 1,5 x 1,5) sale gigante en el
+// cuarto, aunque en el visor se vea normal porque la cámara
+// está a ~9 unidades. Estas funciones ajustan el objeto
+// seleccionado ANTES de entrar a AR (dentro de la sesión no
+// hay botones, y el pinch sigue pausado desde v0.17).
+// fitSelectedToSize guarda la escala original una sola vez, en
+// userData.arOriginalScale, para poder restaurarla.
+export function fitSelectedToSize(targetMeters) {
+  if (!state.selected) return null;
+  const box = new THREE.Box3().setFromObject(state.selected);
+  const size = new THREE.Vector3();
+  box.getSize(size);
+  const longest = Math.max(size.x, size.y, size.z);
+  if (!longest || !isFinite(longest)) return null;
+  if (!state.selected.userData.arOriginalScale) {
+    state.selected.userData.arOriginalScale = state.selected.scale.clone();
+  }
+  const factor = targetMeters / longest;
+  state.selected.scale.multiplyScalar(factor);
+  state.selected.updateMatrixWorld(true);
+  refreshSelectionHelper();
+  return { longest, factor, newLongest: targetMeters };
+}
+
+export function restoreSelectedScale() {
+  if (!state.selected || !state.selected.userData.arOriginalScale) return false;
+  state.selected.scale.copy(state.selected.userData.arOriginalScale);
+  state.selected.updateMatrixWorld(true);
+  refreshSelectionHelper();
+  return true;
 }
 
 export function duplicateSelected() {

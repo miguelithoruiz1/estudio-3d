@@ -52,8 +52,8 @@
 //   pantalla del móvil durante la inmersión.
 
 import * as THREE from 'three';
-import { scene, gridHelper, refreshSelectionHelper } from './scene.js?v=0.17';
-import { state, log } from './store.js?v=0.17';
+import { scene, gridHelper, refreshSelectionHelper } from './scene.js?v=0.18';
+import { state, log } from './store.js?v=0.18';
 
 let xrRenderer = null;
 let reticle = null;
