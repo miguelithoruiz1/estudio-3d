@@ -1,4 +1,4 @@
-# Estudio 3D — v0.20 Escala AR con botones
+# Estudio 3D — v0.21 Escaneo de objeto
 
 ## Arquitectura
 
@@ -53,7 +53,16 @@ test/test-v17.mjs # Test Node de la v0.17 (sin dom-overlay, hit-test + select + 
 test/test-v18.mjs # Test Node de la v0.18 (ajuste a 30 cm + restaurar, 1 unidad = 1 metro)
 test/test-v19.mjs # Test Node de la v0.19 (dom-overlay corregido, pellizco + giro)
 test/test-v20.mjs # Test Node de la v0.20 (botones + / − en AR, pellizco con texto de escala, tamaños predefinidos)
+test/test-v21.mjs # Test Node de la v0.21 (escaneo fase 1: cámara, 8 ángulos, miniaturas, descarga, mejor foto a 3D)
 ```
+
+## v0.21 Escaneo de objeto (fase 1): captura guiada, no fotogrametría
+
+- Pellizco confirmado en v0.20 por el usuario ("con muy buena fluidez, no usé los botones"), así que se retoma la segunda parte en el orden elegido: primero escaneo, luego mapeo.
+- Nueva sección "Escaneo de objeto": cámara trasera en vivo en la página, botón Capturar foto, guía de 8 ángulos (cada 45°), miniaturas (tocar una la elige como mejor foto), importación de varias fotos ya tomadas, descarga de la serie, y "Generar 3D gratis con la mejor foto" (reutiliza Espacio + token HF de la sección anterior; el modelo resultante se añade a la escena para colocarlo en AR con pellizco).
+- Límite honesto, escrito en la propia página: esto NO reconstruye un modelo a partir de todas las fotos. La fotogrametría real exige un servicio externo o un backend (COLMAP/NeRF), no conectado aquí. La serie descargada queda guardada en el teléfono como base para ese paso futuro.
+- Las fotos viven solo en memoria de la página: si se cierra sin descargarlas, se pierden.
+- Fase 2 pendiente: mapeo de un sitio/cuarto.
 
 ## v0.20 Escala AR con botones: si el pellizco no llega, hay otro camino
 

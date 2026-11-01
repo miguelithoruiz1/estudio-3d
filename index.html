@@ -3,16 +3,16 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Estudio 3D — v0.20 Escala AR con botones</title>
-<link rel="stylesheet" href="styles.css?v=0.20">
+<title>Estudio 3D — v0.21 Escaneo de objeto</title>
+<link rel="stylesheet" href="styles.css?v=0.21">
 <script type="importmap">
 {"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/","@gradio/client":"https://cdn.jsdelivr.net/npm/@gradio/client/dist/index.min.js"}}
 </script>
 </head>
 <body>
 <header>
-<h1>Estudio 3D <span class="badge">v0.20 Escala AR con botones</span></h1>
-<p>Escena, interfaz, importación/exportación, IA y timeline separados en módulos ES6. Generación gratuita por Hugging Face Spaces con token Read del usuario, guardado solo en su navegador, con errores visibles en el panel de registro. Las mallas inyectadas se normalizan a eje mayor 2, se centran en (0,0,0) y la cámara las encuadra al 80%. El Outliner lista la jerarquía y el inspector edita una sola sub-malla sin tocar su textura. El recuadro magenta se recrea tras la normalización y sigue a la malla al moverla con el gizmo. Ahora con iluminación HDRI (IBL) opcional, render final PNG con supersampling, post-procesamiento con Bloom, cache busting ?v=0.20 en todos los módulos, y AR WebXR con hit-test y gestos: en un móvil compatible, el botón AR coloca el modelo seleccionado sobre el suelo o una mesa real, y con dos dedos se escala (pinch) y se rota. Al abrir, un aviso indica si este teléfono puede usar AR y, si no puede, qué alternativa usar en el visor 3D, antes de pulsar el botón AR.</p>
+<h1>Estudio 3D <span class="badge">v0.21 Escaneo de objeto</span></h1>
+<p>Escena, interfaz, importación/exportación, IA y timeline separados en módulos ES6. Generación gratuita por Hugging Face Spaces con token Read del usuario, guardado solo en su navegador, con errores visibles en el panel de registro. Las mallas inyectadas se normalizan a eje mayor 2, se centran en (0,0,0) y la cámara las encuadra al 80%. El Outliner lista la jerarquía y el inspector edita una sola sub-malla sin tocar su textura. El recuadro magenta se recrea tras la normalización y sigue a la malla al moverla con el gizmo. Ahora con iluminación HDRI (IBL) opcional, render final PNG con supersampling, post-procesamiento con Bloom, cache busting ?v=0.21 en todos los módulos, y AR WebXR con hit-test y gestos: en un móvil compatible, el botón AR coloca el modelo seleccionado sobre el suelo o una mesa real, y con dos dedos se escala (pinch) y se rota. Al abrir, un aviso indica si este teléfono puede usar AR y, si no puede, qué alternativa usar en el visor 3D, antes de pulsar el botón AR.</p>
 </header>
 <div id="arCompat" data-status="checking">Comprobando si este teléfono puede usar AR…</div>
 <div class="layout">
@@ -82,6 +82,22 @@
 <button id="generateAI">Generar 3D con IA e inyectar .glb</button>
 <div class="warn small">Meshy acepta archivo local como data URI y URL pública. Tripo con archivo local lo sube primero a /v3/files. Generar cuesta créditos y, en Meshy, crear tareas requiere plan de pago. Si el navegador bloquea la llamada por CORS, hace falta un pequeño proxy/backend (ver README). La clave nunca se escribe en el repositorio.</div>
 
+<h2>Escaneo de objeto (fase 1)</h2>
+<p class="small">Primera parte de la segunda mitad de la app: escanear un objeto con la cámara. Esto es captura guiada, no fotogrametría real desde varias fotos (eso exige un servicio externo y no está conectado aquí). Captura una serie alrededor del objeto, descárgala para guardarla, y genera un modelo desde la mejor foto con la IA gratuita que ya existe.</p>
+<p class="small">Cómo escanear: pon el objeto sobre una superficie, con buena luz y sin moverlo. Da la vuelta a su alrededor y captura una foto por ángulo (8 sugeridos: frente, diagonal, lado, diagonal trasera, atrás, diagonal trasera, otro lado, diagonal). Toca una miniatura para elegirla como mejor foto.</p>
+<video id="scanVideo" playsinline muted style="display:none;width:100%;border-radius:10px"></video>
+<div class="row">
+<button id="scanOpenCamera">Abrir cámara</button><button id="scanCapture">Capturar foto</button><button id="scanStopCamera">Cerrar cámara</button>
+</div>
+<label>Importar fotos ya tomadas (varias)</label>
+<input type="file" id="scanImport" accept="image/jpeg,image/png,image/webp" multiple>
+<div id="scanCount" class="small">Sin fotos todavía. Abre la cámara o importa fotos.</div>
+<div id="scanStrip" class="scan-strip"></div>
+<div class="row">
+<button id="scanDownload">Descargar fotos</button><button id="scanUseBest">Generar 3D gratis con la mejor foto</button><button id="scanClear">Limpiar escaneo</button>
+</div>
+<p class="small">Las fotos viven solo en esta página: si la cierras sin descargarlas, se pierden. Generar 3D gratis usa el Espacio y el token HF de la sección anterior, y el modelo resultante se añade a la escena para colocarlo en AR.</p>
+
 <h2>Objeto seleccionado</h2>
 <div id="selName" class="small">Ninguno. Haz clic en un objeto.</div>
 <div class="row">
@@ -142,6 +158,6 @@
     }, 10000);
   });
 </script>
-<script type="module" src="js/main.js?v=0.20"></script>
+<script type="module" src="js/main.js?v=0.21"></script>
 </body>
 </html>

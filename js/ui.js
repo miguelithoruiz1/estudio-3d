@@ -1,16 +1,17 @@
 import * as THREE from 'three';
-import { state, setLogger, log } from './store.js?v=0.20';
-import { scene, renderer, register, setTransformMode, removeSelected, duplicateSelected, applyMaterial, fitSelectedToSize, restoreSelectedScale } from './scene.js?v=0.20';
-import { loadModelFile, exportGLB, exportOBJ, download } from './loaders.js?v=0.20';
-import { addPrimitive, addParticles, addTextMotion, addArm, setShoulder, setElbow, inflateSelected } from './effects.js?v=0.20';
-import { recordKeyframe, applyKeyframes, updateTracks, createVideoRecorder } from './timeline.js?v=0.20';
-import { generate3DFromImage } from './ai3d.js?v=0.20';
-import { generateFree3DFromImage } from './hf3d.js?v=0.20';
-import { getHfToken, saveHfToken, clearHfToken } from './hf-token.js?v=0.20';
-import { refreshOutliner } from './outliner.js?v=0.20';
-import { loadEnvironmentFile, setEnvironmentBackground } from './environment.js?v=0.20';
-import { renderSnapshot } from './snapshot.js?v=0.20';
-import { setBloomEnabled, setBloomStrength, getBloomState, isVFXReady } from './vfx.js?v=0.20';
+import { state, setLogger, log } from './store.js?v=0.21';
+import { scene, renderer, register, setTransformMode, removeSelected, duplicateSelected, applyMaterial, fitSelectedToSize, restoreSelectedScale } from './scene.js?v=0.21';
+import { loadModelFile, exportGLB, exportOBJ, download } from './loaders.js?v=0.21';
+import { addPrimitive, addParticles, addTextMotion, addArm, setShoulder, setElbow, inflateSelected } from './effects.js?v=0.21';
+import { recordKeyframe, applyKeyframes, updateTracks, createVideoRecorder } from './timeline.js?v=0.21';
+import { generate3DFromImage } from './ai3d.js?v=0.21';
+import { generateFree3DFromImage } from './hf3d.js?v=0.21';
+import { getHfToken, saveHfToken, clearHfToken } from './hf-token.js?v=0.21';
+import { refreshOutliner } from './outliner.js?v=0.21';
+import { loadEnvironmentFile, setEnvironmentBackground } from './environment.js?v=0.21';
+import { renderSnapshot } from './snapshot.js?v=0.21';
+import { renderScanUI, openScanCamera, stopScanCamera, captureScanPhoto, importScanPhotos, downloadScanPhotos, getBestScanPhotoFile, clearScan } from './scan.js?v=0.21';
+import { setBloomEnabled, setBloomStrength, getBloomState, isVFXReady } from './vfx.js?v=0.21';
 
 const $ = (id) => document.getElementById(id);
 // Enlace seguro: si falta un id, se deja constancia en #log en
@@ -211,6 +212,43 @@ export function initUI() {
     await startFreeGeneration();
   });
   bind('generateFreeAI', 'click', startFreeGeneration);
+
+  // --- Escaneo de objeto, fase 1 (v0.21) ---
+  // La generación desde la mejor foto reutiliza el mismo flujo
+  // gratuito (Espacio + token HF de la sección anterior).
+  async function startScanGeneration() {
+    const file = getBestScanPhotoFile();
+    const status = $('hfStatus');
+    if (!file) { log('Escaneo: no hay foto para generar. Captura o importa fotos primero.'); return; }
+    if (hfGenerating) { log('IA gratuita: ya hay una generación en curso.'); return; }
+    hfGenerating = true;
+    if (status) status.style.display = 'block';
+    try {
+      await generateFree3DFromImage({
+        file,
+        space: $('hfSpace')?.value || 'sf3d',
+        onProgress: (msg) => {
+          if (status) status.innerHTML = '<span class="spinner"></span> ' + msg;
+          log(msg);
+        },
+      });
+      if (status) status.textContent = status.textContent;
+    } catch (err) {
+      const msg = 'IA gratuita (escaneo): ' + (err?.message || err);
+      log(msg);
+      if (status) status.textContent = 'Error: ' + (err?.message || err);
+    } finally {
+      hfGenerating = false;
+    }
+  }
+  bind('scanOpenCamera', 'click', openScanCamera);
+  bind('scanStopCamera', 'click', stopScanCamera);
+  bind('scanCapture', 'click', captureScanPhoto);
+  bind('scanDownload', 'click', downloadScanPhotos);
+  bind('scanClear', 'click', clearScan);
+  bind('scanUseBest', 'click', startScanGeneration);
+  bind('scanImport', 'change', async (e) => { if (e.target.files?.length) await importScanPhotos(e.target.files); });
+  renderScanUI();
 
   // --- Pipeline IA de pago (opcional, v0.2) ---
   $('generateAI').onclick = async () => {
