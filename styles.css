@@ -34,5 +34,5 @@ label{font-size:12px;color:#9fb0c8;display:block;margin-top:8px}
 /* v0.14: capa DOM Overlay para AR. Oculta fuera de sesión (la
    muestra initAR en sessionstart). touch-action:none evita que
    el navegador intercepte el pinch con su propio zoom/scroll. */
-#arOverlay{position:fixed;inset:0;z-index:20;touch-action:none;display:none}
-#arOverlay .hint{position:absolute;top:12px;left:50%;transform:translateX(-50%);background:rgba(0,0,0,.55);padding:8px 12px;border-radius:999px;font-size:13px;color:#fff;pointer-events:none;white-space:nowrap}
+#arOverlay{position:fixed;inset:0;z-index:20;touch-action:none;display:block;pointer-events:none}
+#arOverlay .hint{position:absolute;top:12px;left:50%;transform:translateX(-50%);background:rgba(0,0,0,.55);padding:8px 12px;border-radius:999px;font-size:13px;color:#fff;pointer-events:none;white-space:nowrap;opacity:0}

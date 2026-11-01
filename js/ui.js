@@ -1,16 +1,16 @@
 import * as THREE from 'three';
-import { state, setLogger, log } from './store.js?v=0.18';
-import { scene, renderer, register, setTransformMode, removeSelected, duplicateSelected, applyMaterial, fitSelectedToSize, restoreSelectedScale } from './scene.js?v=0.18';
-import { loadModelFile, exportGLB, exportOBJ, download } from './loaders.js?v=0.18';
-import { addPrimitive, addParticles, addTextMotion, addArm, setShoulder, setElbow, inflateSelected } from './effects.js?v=0.18';
-import { recordKeyframe, applyKeyframes, updateTracks, createVideoRecorder } from './timeline.js?v=0.18';
-import { generate3DFromImage } from './ai3d.js?v=0.18';
-import { generateFree3DFromImage } from './hf3d.js?v=0.18';
-import { getHfToken, saveHfToken, clearHfToken } from './hf-token.js?v=0.18';
-import { refreshOutliner } from './outliner.js?v=0.18';
-import { loadEnvironmentFile, setEnvironmentBackground } from './environment.js?v=0.18';
-import { renderSnapshot } from './snapshot.js?v=0.18';
-import { setBloomEnabled, setBloomStrength, getBloomState, isVFXReady } from './vfx.js?v=0.18';
+import { state, setLogger, log } from './store.js?v=0.19';
+import { scene, renderer, register, setTransformMode, removeSelected, duplicateSelected, applyMaterial, fitSelectedToSize, restoreSelectedScale } from './scene.js?v=0.19';
+import { loadModelFile, exportGLB, exportOBJ, download } from './loaders.js?v=0.19';
+import { addPrimitive, addParticles, addTextMotion, addArm, setShoulder, setElbow, inflateSelected } from './effects.js?v=0.19';
+import { recordKeyframe, applyKeyframes, updateTracks, createVideoRecorder } from './timeline.js?v=0.19';
+import { generate3DFromImage } from './ai3d.js?v=0.19';
+import { generateFree3DFromImage } from './hf3d.js?v=0.19';
+import { getHfToken, saveHfToken, clearHfToken } from './hf-token.js?v=0.19';
+import { refreshOutliner } from './outliner.js?v=0.19';
+import { loadEnvironmentFile, setEnvironmentBackground } from './environment.js?v=0.19';
+import { renderSnapshot } from './snapshot.js?v=0.19';
+import { setBloomEnabled, setBloomStrength, getBloomState, isVFXReady } from './vfx.js?v=0.19';
 
 const $ = (id) => document.getElementById(id);
 // Enlace seguro: si falta un id, se deja constancia en #log en

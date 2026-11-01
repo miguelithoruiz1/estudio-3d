@@ -1,4 +1,4 @@
-# Estudio 3D — v0.18 Tamaño AR 30 cm
+# Estudio 3D — v0.19 Pellizco AR de vuelta
 
 ## Arquitectura
 
@@ -51,7 +51,19 @@ test/test-v15.mjs # Test Node de la v0.15 (aviso AR, ramas compatible/no compati
 test/test-v16.mjs # Test Node de la v0.16 (estado AR en sesión, reintento hit-test, respaldo frente a cámara)
 test/test-v17.mjs # Test Node de la v0.17 (sin dom-overlay, hit-test + select + respaldo)
 test/test-v18.mjs # Test Node de la v0.18 (ajuste a 30 cm + restaurar, 1 unidad = 1 metro)
+test/test-v19.mjs # Test Node de la v0.19 (dom-overlay corregido, pellizco + giro)
 ```
+
+## v0.19 Pellizco AR de vuelta: dom-overlay corregido
+
+- El pellizco en AR necesita dom-overlay, porque sin esa capa los toques van al controlador XR (solo toque, no multitáctil).
+- Diferencia frente a v0.14-0.16, que coincidió con la cámara negra: la capa #arOverlay ya NO está en display:none al pedir la sesión. Está visible desde el inicio, con pointer-events:none y el texto en opacity 0, para no tapar ni bloquear el visor. Solo en sessionstart se activan los toques y el texto; en sessionend se vuelven a desactivar.
+- Gestos en sesión: 1 toque coloca/arrastra al retículo (o frente a ti sin superficie), 2 dedos pellizcan para escalar (clamp 0,1–10 por eje) y giran en Y. El botón "Ajustar a 30 cm para AR" de v0.18 sigue disponible antes de entrar.
+- Riesgo honesto: si la cámara vuelve a salir negra con esta capa, el retroceso es v0.18 (sin capa, cámara confirmada, sin pellizco). Prueba real en el teléfono del usuario pendiente: ¿cámara abierta + pellizco funciona?
+
+## Segunda parte pendiente: escaneo y mapeo
+
+- Escanear un objeto desde la cámara y mapear un sitio son dos funciones distintas de colocar un modelo en AR, y aún no están en la app. Opciones a decidir con el usuario: (A) escaneo por fotos alrededor de un objeto para generar su modelo 3D, (B) mapeo de un cuarto/sitio con los planos detectados por WebXR (suelo, paredes) como base para colocar objetos.
 
 ## v0.18 Tamaño AR 30 cm: el cubo no es un error, es de 1,5 m
 

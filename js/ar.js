@@ -1,11 +1,12 @@
 // v0.13: Mapeo Espacial y AR (WebXR, hit-test).
 // v0.14: Interacción Espacial y Gestos AR (DOM Overlay + multitáctil).
-// v0.17: Sin dom-overlay (ver main.js). El texto de ayuda en
-// sesión de v0.16 solo se veía con dom-overlay, así que en
-// v0.17 no se verá dentro de la sesión; en su lugar, los
-// mensajes de colocación quedan en el Registro, visible al
-// salir de AR. Colocar por 'select' y el respaldo frente a
-// cámara de v0.16 siguen activos.
+// v0.19: dom-overlay de vuelta, corregido (ver main.js). La
+// capa ya está visible antes de la sesión, con toques
+// desactivados y texto oculto; en sessionstart se activan
+// ambos, lo que devuelve el pellizco (escala) y el giro con
+// dos dedos de v0.14. Colocar por toque y el respaldo frente
+// a cámara de v0.16 siguen activos, y el 'select' de WebXR
+// queda como respaldo si un toque no pasa por la capa.
 // v0.16: Diagnóstico AR en sesión. Antes, si la detección de
 // superficie (hit-test) fallaba, la sesión quedaba en silencio:
 // sin retículo, tocar no colocaba nada y la pantalla parecía
@@ -52,8 +53,8 @@
 //   pantalla del móvil durante la inmersión.
 
 import * as THREE from 'three';
-import { scene, gridHelper, refreshSelectionHelper } from './scene.js?v=0.18';
-import { state, log } from './store.js?v=0.18';
+import { scene, gridHelper, refreshSelectionHelper } from './scene.js?v=0.19';
+import { state, log } from './store.js?v=0.19';
 
 let xrRenderer = null;
 let reticle = null;
@@ -257,8 +258,15 @@ function restorePanelsAfterAR() {
 }
 
 function onSessionStart() {
+  // v0.19: activar toques y texto solo ahora. Antes de la
+  // sesión la capa ya era visible pero con pointer-events:none
+  // y texto en opacity 0, para no bloquear el visor.
   const overlay = document.getElementById('arOverlay');
-  if (overlay) overlay.style.display = 'block';
+  if (overlay) {
+    overlay.style.pointerEvents = 'auto';
+    const h = overlay.querySelector('.hint');
+    if (h) h.style.opacity = '1';
+  }
   sessionStartAt = Date.now();
   lastViewerMatrix = null;
   lastHintText = '';
@@ -275,10 +283,12 @@ function onSessionStart() {
 
 function onSessionEnd() {
   const overlay = document.getElementById('arOverlay');
-  if (overlay) overlay.style.display = 'none';
+  if (overlay) {
+    overlay.style.pointerEvents = 'none';
+    const h = overlay.querySelector('.hint');
+    if (h) { h.style.opacity = '0'; h.textContent = 'Toca para colocar • Pellizca para escalar • Gira con dos dedos para rotar'; }
+  }
   lastHintText = '';
-  const hint = document.querySelector('#arOverlay .hint');
-  if (hint) hint.textContent = 'Toca para colocar • Pellizca para escalar • Gira con dos dedos para rotar';
   resetPinchState();
   restorePanelsAfterAR();
   scene.background = savedBackground;

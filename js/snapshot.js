@@ -20,8 +20,8 @@
 // devolvería una imagen negra.
 
 import * as THREE from 'three';
-import { renderer, scene, camera, gridHelper } from './scene.js?v=0.18';
-import { renderVFX, isVFXReady, syncVFXSize } from './vfx.js?v=0.18';
+import { renderer, scene, camera, gridHelper } from './scene.js?v=0.19';
+import { renderVFX, isVFXReady, syncVFXSize } from './vfx.js?v=0.19';
 
 // v0.11 Snapshot Sync: si el post-procesamiento está activo
 // (compositor inicializado), la captura usa composer.render()

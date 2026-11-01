@@ -3,16 +3,16 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Estudio 3D — v0.18 Tamaño AR 30 cm</title>
-<link rel="stylesheet" href="styles.css?v=0.18">
+<title>Estudio 3D — v0.19 Pellizco AR de vuelta</title>
+<link rel="stylesheet" href="styles.css?v=0.19">
 <script type="importmap">
 {"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/","@gradio/client":"https://cdn.jsdelivr.net/npm/@gradio/client/dist/index.min.js"}}
 </script>
 </head>
 <body>
 <header>
-<h1>Estudio 3D <span class="badge">v0.18 Tamaño AR 30 cm</span></h1>
-<p>Escena, interfaz, importación/exportación, IA y timeline separados en módulos ES6. Generación gratuita por Hugging Face Spaces con token Read del usuario, guardado solo en su navegador, con errores visibles en el panel de registro. Las mallas inyectadas se normalizan a eje mayor 2, se centran en (0,0,0) y la cámara las encuadra al 80%. El Outliner lista la jerarquía y el inspector edita una sola sub-malla sin tocar su textura. El recuadro magenta se recrea tras la normalización y sigue a la malla al moverla con el gizmo. Ahora con iluminación HDRI (IBL) opcional, render final PNG con supersampling, post-procesamiento con Bloom, cache busting ?v=0.18 en todos los módulos, y AR WebXR con hit-test y gestos: en un móvil compatible, el botón AR coloca el modelo seleccionado sobre el suelo o una mesa real, y con dos dedos se escala (pinch) y se rota. Al abrir, un aviso indica si este teléfono puede usar AR y, si no puede, qué alternativa usar en el visor 3D, antes de pulsar el botón AR.</p>
+<h1>Estudio 3D <span class="badge">v0.19 Pellizco AR de vuelta</span></h1>
+<p>Escena, interfaz, importación/exportación, IA y timeline separados en módulos ES6. Generación gratuita por Hugging Face Spaces con token Read del usuario, guardado solo en su navegador, con errores visibles en el panel de registro. Las mallas inyectadas se normalizan a eje mayor 2, se centran en (0,0,0) y la cámara las encuadra al 80%. El Outliner lista la jerarquía y el inspector edita una sola sub-malla sin tocar su textura. El recuadro magenta se recrea tras la normalización y sigue a la malla al moverla con el gizmo. Ahora con iluminación HDRI (IBL) opcional, render final PNG con supersampling, post-procesamiento con Bloom, cache busting ?v=0.19 en todos los módulos, y AR WebXR con hit-test y gestos: en un móvil compatible, el botón AR coloca el modelo seleccionado sobre el suelo o una mesa real, y con dos dedos se escala (pinch) y se rota. Al abrir, un aviso indica si este teléfono puede usar AR y, si no puede, qué alternativa usar en el visor 3D, antes de pulsar el botón AR.</p>
 </header>
 <div id="arCompat" data-status="checking">Comprobando si este teléfono puede usar AR…</div>
 <div class="layout">
@@ -138,6 +138,6 @@
     }, 10000);
   });
 </script>
-<script type="module" src="js/main.js?v=0.18"></script>
+<script type="module" src="js/main.js?v=0.19"></script>
 </body>
 </html>
