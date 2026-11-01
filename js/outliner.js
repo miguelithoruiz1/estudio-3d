@@ -9,8 +9,8 @@
 // desde state.onObjectsChange (importación/generación/eliminación)
 // y desde state.onSelectChange (para marcar el activo).
 
-import { state } from './store.js?v=0.15';
-import { select } from './scene.js?v=0.15';
+import { state } from './store.js?v=0.16';
+import { select } from './scene.js?v=0.16';
 
 function isHelper(obj) {
   return Boolean(obj?.isGridHelper || obj?.isTransformControls

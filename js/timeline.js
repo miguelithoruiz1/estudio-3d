@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { state, log } from './store.js?v=0.15';
+import { state, log } from './store.js?v=0.16';
 
 export function updateTracks() {
   const el = document.getElementById('tracks');

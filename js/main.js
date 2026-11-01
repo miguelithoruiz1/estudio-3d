@@ -1,13 +1,13 @@
 import * as THREE from 'three';
-import { initScene, renderer, scene, camera, controls, resize, syncSelectionHelper } from './scene.js?v=0.15';
-import { state, log } from './store.js?v=0.15';
-import { initUI } from './ui.js?v=0.15';
-import { initVFX, renderVFX, syncVFXSize, isVFXReady, getBloomState } from './vfx.js?v=0.15';
-import { updateEffects, addPrimitive } from './effects.js?v=0.15';
-import { updateTracks } from './timeline.js?v=0.15';
+import { initScene, renderer, scene, camera, controls, resize, syncSelectionHelper } from './scene.js?v=0.16';
+import { state, log } from './store.js?v=0.16';
+import { initUI } from './ui.js?v=0.16';
+import { initVFX, renderVFX, syncVFXSize, isVFXReady, getBloomState } from './vfx.js?v=0.16';
+import { updateEffects, addPrimitive } from './effects.js?v=0.16';
+import { updateTracks } from './timeline.js?v=0.16';
 import { ARButton } from 'three/addons/webxr/ARButton.js';
-import { initAR, updateARHitTest, isARSessionActive } from './ar.js?v=0.15';
-import { initARCompat } from './ar-compat.js?v=0.15';
+import { initAR, updateARHitTest, isARSessionActive } from './ar.js?v=0.16';
+import { initARCompat } from './ar-compat.js?v=0.16';
 
 function start() {
   try {
@@ -89,10 +89,10 @@ function start() {
     addPrimitive('box');
     state.objects[state.objects.length - 1].name = 'Cubo inicial';
     updateTracks();
-    // v0.15: log de inicio con la versión y el estado AR/VFX.
+    // v0.16: log de inicio con la versión y el estado AR/VFX.
     log(isVFXReady()
-      ? `Listo v0.15. Motor VFX activo, AR WebXR listo (botón AR con hit-test y gestos multitáctiles, aviso de compatibilidad AR al abrir). (Bloom ${getBloomState().enabled ? 'activo' : 'inactivo'}, strength ${getBloomState().strength}). Añade objetos, importa un modelo o genera uno gratis con Hugging Face (necesita tu token Read, guardado solo en tu navegador).`
-      : 'Listo v0.15. Motor VFX no disponible, render directo, AR WebXR listo (botón AR con hit-test y gestos multitáctiles, aviso de compatibilidad AR al abrir). Añade objetos, importa un modelo o genera uno gratis con Hugging Face (necesita tu token Read, guardado solo en tu navegador).');
+      ? `Listo v0.16. Motor VFX activo, AR WebXR listo (botón AR con hit-test y gestos multitáctiles, aviso de compatibilidad AR al abrir). (Bloom ${getBloomState().enabled ? 'activo' : 'inactivo'}, strength ${getBloomState().strength}). Añade objetos, importa un modelo o genera uno gratis con Hugging Face (necesita tu token Read, guardado solo en tu navegador).`
+      : 'Listo v0.16. Motor VFX no disponible, render directo, AR WebXR listo (botón AR con hit-test y gestos multitáctiles, aviso de compatibilidad AR al abrir). Añade objetos, importa un modelo o genera uno gratis con Hugging Face (necesita tu token Read, guardado solo en tu navegador).');
     window.__estudioReady = true;
     renderer.setAnimationLoop(animate);
   } catch (err) {

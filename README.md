@@ -1,4 +1,4 @@
-# Estudio 3D — v0.15 Aviso AR
+# Estudio 3D — v0.16 AR sin atasco
 
 ## Arquitectura
 
@@ -48,7 +48,14 @@ test/test-v13.mjs # Test Node de la v0.13 (XR, ARButton, retículo, anclaje, cac
 test/test-v14.mjs # Test Node de la v0.14 (dom-overlay, pinch, twist, clamp, cache busting)
 js/ar-compat.js # Aviso AR al abrir: HTTPS + immersive-ar, alternativa visor 3D (v0.15)
 test/test-v15.mjs # Test Node de la v0.15 (aviso AR, ramas compatible/no compatible/sin HTTPS)
+test/test-v16.mjs # Test Node de la v0.16 (estado AR en sesión, reintento hit-test, respaldo frente a cámara)
 ```
+
+## v0.16 AR sin atasco: estado en sesión y colocación de respaldo
+
+- Antes, si la detección de superficie fallaba, la sesión quedaba en silencio: sin retículo, tocar no colocaba nada y parecía atascada.
+- Ahora el texto de ayuda en sesión muestra el estado real (buscando superficie / superficie detectada / sin superficie: toca para colocar frente a ti), el hit-test se reintenta a los 2 s si falla, y sin retículo tocar coloca el modelo 1,5 m frente a la cámara.
+- Gestos v0.14 y aviso v0.15 intactos. Prueba real en el teléfono del usuario pendiente.
 
 ## v0.15 Aviso AR: compatibilidad al abrir, antes del botón AR
 

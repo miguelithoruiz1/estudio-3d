@@ -1,5 +1,16 @@
 // v0.13: Mapeo Espacial y AR (WebXR, hit-test).
 // v0.14: Interacción Espacial y Gestos AR (DOM Overlay + multitáctil).
+// v0.16: Diagnóstico AR en sesión. Antes, si la detección de
+// superficie (hit-test) fallaba, la sesión quedaba en silencio:
+// sin retículo, tocar no colocaba nada y la pantalla parecía
+// atascada en negro. Ahora: (1) el texto de ayuda en sesión
+// muestra el estado real (buscando superficie / superficie
+// detectada / sin superficie: toca para colocar frente a ti),
+// (2) si pedir el hit-test falla, se reintenta a los 2 s en
+// lugar de quedarse marcado como pedido para siempre, y (3) si
+// no hay retículo, tocar coloca el modelo 1,5 m frente a la
+// cámara (pose del visor del frame XR), para que la sesión
+// nunca quede sin salida.
 //
 // Flujo estándar de WebXR (ejemplo hit-test de Three.js):
 // - ARButton con requiredFeatures: ['hit-test'] crea la sesión
@@ -35,14 +46,25 @@
 //   pantalla del móvil durante la inmersión.
 
 import * as THREE from 'three';
-import { scene, gridHelper, refreshSelectionHelper } from './scene.js?v=0.15';
-import { state, log } from './store.js?v=0.15';
+import { scene, gridHelper, refreshSelectionHelper } from './scene.js?v=0.16';
+import { state, log } from './store.js?v=0.16';
 
 let xrRenderer = null;
 let reticle = null;
 let controller = null;
 let hitTestSource = null;
 let hitTestSourceRequested = false;
+let hitTestRetryAt = 0;
+let sessionStartAt = 0;
+let lastViewerMatrix = null;
+let lastHintText = '';
+
+function setARHint(text) {
+  if (!text || text === lastHintText) return;
+  lastHintText = text;
+  const hint = document.querySelector('#arOverlay .hint');
+  if (hint) hint.textContent = text;
+}
 let savedBackground = null;
 let savedGridVisible = true;
 let savedUIDisplays = [];
@@ -170,16 +192,39 @@ function getPlaceableObject(obj) {
 }
 
 export function placeSelectedAtReticle() {
-  if (!reticle || !reticle.visible) return null;
   const placeable = getPlaceableObject(state.selected);
   if (!placeable) {
     log('AR: no hay un modelo seleccionado para colocar. Selecciona uno antes de tocar la pantalla.');
     return null;
   }
+  // v0.16: respaldo sin retículo. Si la superficie no se detectó,
+  // colocar 1,5 m frente a la cámara (pose del visor guardada en
+  // el último frame XR), en lugar de no hacer nada y dejar la
+  // sesión atascada.
+  if (!reticle || !reticle.visible) {
+    if (!lastViewerMatrix) {
+      setARHint('Sesión AR activa: apunta al suelo o a una mesa para buscar superficie…');
+      log('AR: todavía no hay superficie detectada ni pose de cámara. Apunta al suelo o a una mesa y vuelve a tocar.');
+      return null;
+    }
+    const m = lastViewerMatrix;
+    const camPos = new THREE.Vector3(m[12], m[13], m[14]);
+    // Columna Z de la matriz = eje hacia atrás de la cámara.
+    const back = new THREE.Vector3(m[8], m[9], m[10]).normalize();
+    const target = camPos.clone().add(back.clone().multiplyScalar(-1.5));
+    target.y = camPos.y - 0.4;
+    placeable.position.copy(target);
+    placeable.updateMatrixWorld(true);
+    if (state.selected) refreshSelectionHelper();
+    setARHint('Modelo colocado frente a ti. Con dos dedos lo escalas y lo giras.');
+    log(`AR: ${placeable.name || 'modelo'} colocado frente a ti (sin superficie detectada) en (${target.x.toFixed(2)}, ${target.y.toFixed(2)}, ${target.z.toFixed(2)}).`);
+    return placeable;
+  }
   const position = new THREE.Vector3().setFromMatrixPosition(reticle.matrix);
   placeable.position.copy(position);
   placeable.updateMatrixWorld(true);
   if (state.selected) refreshSelectionHelper();
+  setARHint('Modelo colocado. Con dos dedos lo escalas y lo giras.');
   log(`AR: ${placeable.name || 'modelo'} colocado en (${position.x.toFixed(2)}, ${position.y.toFixed(2)}, ${position.z.toFixed(2)}).`);
   return placeable;
 }
@@ -208,6 +253,10 @@ function restorePanelsAfterAR() {
 function onSessionStart() {
   const overlay = document.getElementById('arOverlay');
   if (overlay) overlay.style.display = 'block';
+  sessionStartAt = Date.now();
+  lastViewerMatrix = null;
+  lastHintText = '';
+  setARHint('Sesión AR activa: apunta al suelo o a una mesa para buscar superficie…');
   hidePanelsForAR();
   savedBackground = scene.background;
   scene.background = null;
@@ -221,6 +270,9 @@ function onSessionStart() {
 function onSessionEnd() {
   const overlay = document.getElementById('arOverlay');
   if (overlay) overlay.style.display = 'none';
+  lastHintText = '';
+  const hint = document.querySelector('#arOverlay .hint');
+  if (hint) hint.textContent = 'Toca para colocar • Pellizca para escalar • Gira con dos dedos para rotar';
   resetPinchState();
   restorePanelsAfterAR();
   scene.background = savedBackground;
@@ -228,6 +280,8 @@ function onSessionEnd() {
   if (reticle) reticle.visible = false;
   hitTestSource = null;
   hitTestSourceRequested = false;
+  hitTestRetryAt = 0;
+  lastViewerMatrix = null;
   log('Sesión AR terminada: paneles, fondo y rejilla restaurados.');
 }
 
@@ -259,15 +313,41 @@ export function updateARHitTest(frame) {
   if (!frame || !xrRenderer) return;
   const session = xrRenderer.xr.getSession();
   if (!session) return;
+  // v0.16: guardar la pose del visor en cada frame, para el
+  // respaldo de colocación sin superficie, y reintentar el
+  // hit-test si la primera petición falló (antes quedaba
+  // marcado como pedido para siempre y el retículo nunca
+  // aparecía).
+  try {
+    const viewerSpace = xrRenderer.xr.getReferenceSpace();
+    if (viewerSpace) {
+      const viewerPose = frame.getViewerPose(viewerSpace);
+      if (viewerPose) lastViewerMatrix = Array.from(viewerPose.transform.matrix);
+    }
+  } catch { /* sin pose de visor: el respaldo queda desactivado */ }
   if (!hitTestSourceRequested) {
+    if (Date.now() < hitTestRetryAt) return;
+    hitTestSourceRequested = true;
     session.requestReferenceSpace('viewer')
       .then((refSpace) => session.requestHitTestSource({ space: refSpace }))
       .then((source) => { hitTestSource = source; })
-      .catch((err) => console.warn('Hit-test no disponible:', err));
-    hitTestSourceRequested = true;
+      .catch((err) => {
+        console.warn('Hit-test no disponible:', err);
+        hitTestSource = null;
+        hitTestSourceRequested = false;
+        hitTestRetryAt = Date.now() + 2000;
+        setARHint('Detección de superficie no disponible todavía: apunta al suelo o toca para colocar el modelo frente a ti.');
+      });
     return;
   }
-  if (!hitTestSource) return;
+  if (!hitTestSource) {
+    if (Date.now() - sessionStartAt > 5000) {
+      setARHint('Sin superficie detectada todavía: toca la pantalla para colocar el modelo frente a ti.');
+    } else {
+      setARHint('Sesión AR activa: apunta al suelo o a una mesa para buscar superficie…');
+    }
+    return;
+  }
   const referenceSpace = xrRenderer.xr.getReferenceSpace();
   if (!referenceSpace) return;
   const results = frame.getHitTestResults(hitTestSource);
@@ -277,8 +357,14 @@ export function updateARHitTest(frame) {
     if (pose) {
       reticle.visible = true;
       reticle.matrix.fromArray(pose.transform.matrix);
+      setARHint('Superficie detectada: toca para colocar el modelo.');
       return;
     }
   }
   reticle.visible = false;
+  if (Date.now() - sessionStartAt > 5000) {
+    setARHint('Sin superficie detectada todavía: toca la pantalla para colocar el modelo frente a ti.');
+  } else {
+    setARHint('Sesión AR activa: apunta al suelo o a una mesa para buscar superficie…');
+  }
 }

@@ -3,8 +3,8 @@ import { OBJLoader } from 'three/addons/loaders/OBJLoader.js';
 import { FBXLoader } from 'three/addons/loaders/FBXLoader.js';
 import { GLTFExporter } from 'three/addons/exporters/GLTFExporter.js';
 import { OBJExporter } from 'three/addons/exporters/OBJExporter.js';
-import { scene, register, normalizeAndFrame } from './scene.js?v=0.15';
-import { log } from './store.js?v=0.15';
+import { scene, register, normalizeAndFrame } from './scene.js?v=0.16';
+import { log } from './store.js?v=0.16';
 
 export function download(blob, name) {
   const a = document.createElement('a');

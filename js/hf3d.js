@@ -1,9 +1,9 @@
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
-import { scene, register, normalizeAndFrame } from './scene.js?v=0.15';
-import { log } from './store.js?v=0.15';
-import { validateImageMeta, getImageDimensions } from './validate-image.js?v=0.15';
-import { getHfToken } from './hf-token.js?v=0.15';
+import { scene, register, normalizeAndFrame } from './scene.js?v=0.16';
+import { log } from './store.js?v=0.16';
+import { validateImageMeta, getImageDimensions } from './validate-image.js?v=0.16';
+import { getHfToken } from './hf-token.js?v=0.16';
 
 // v0.4: @gradio/client YA NO se importa en la cabecera.
 // En v0.3 un fallo de ese CDN rompía todo el grafo de módulos y la
