@@ -20,7 +20,7 @@
 // la pestaña sin descargarlas, se pierden. Por eso el botón de
 // descarga está junto a la captura, no al final del flujo.
 
-import { log } from './store.js?v=0.21';
+import { log } from './store.js?v=0.23';
 
 const ANGLES = ['Frente (0°)', 'Diagonal (45°)', 'Lado (90°)', 'Diagonal trasera (135°)', 'Atrás (180°)', 'Diagonal trasera (225°)', 'Otro lado (270°)', 'Diagonal (315°)'];
 

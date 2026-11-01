@@ -1,17 +1,19 @@
 import * as THREE from 'three';
-import { state, setLogger, log } from './store.js?v=0.21';
-import { scene, renderer, register, setTransformMode, removeSelected, duplicateSelected, applyMaterial, fitSelectedToSize, restoreSelectedScale } from './scene.js?v=0.21';
-import { loadModelFile, exportGLB, exportOBJ, download } from './loaders.js?v=0.21';
-import { addPrimitive, addParticles, addTextMotion, addArm, setShoulder, setElbow, inflateSelected } from './effects.js?v=0.21';
-import { recordKeyframe, applyKeyframes, updateTracks, createVideoRecorder } from './timeline.js?v=0.21';
-import { generate3DFromImage } from './ai3d.js?v=0.21';
-import { generateFree3DFromImage } from './hf3d.js?v=0.21';
-import { getHfToken, saveHfToken, clearHfToken } from './hf-token.js?v=0.21';
-import { refreshOutliner } from './outliner.js?v=0.21';
-import { loadEnvironmentFile, setEnvironmentBackground } from './environment.js?v=0.21';
-import { renderSnapshot } from './snapshot.js?v=0.21';
-import { renderScanUI, openScanCamera, stopScanCamera, captureScanPhoto, importScanPhotos, downloadScanPhotos, getBestScanPhotoFile, clearScan } from './scan.js?v=0.21';
-import { setBloomEnabled, setBloomStrength, getBloomState, isVFXReady } from './vfx.js?v=0.21';
+import { state, setLogger, log } from './store.js?v=0.23';
+import { scene, renderer, register, setTransformMode, removeSelected, duplicateSelected, applyMaterial, fitSelectedToSize, restoreSelectedScale } from './scene.js?v=0.23';
+import { loadModelFile, exportGLB, exportOBJ, download } from './loaders.js?v=0.23';
+import { addPrimitive, addParticles, addTextMotion, addArm, setShoulder, setElbow, inflateSelected } from './effects.js?v=0.23';
+import { recordKeyframe, applyKeyframes, updateTracks, createVideoRecorder } from './timeline.js?v=0.23';
+import { generate3DFromImage } from './ai3d.js?v=0.23';
+import { generateFree3DFromImage } from './hf3d.js?v=0.23';
+import { getHfToken, saveHfToken, clearHfToken } from './hf-token.js?v=0.23';
+import { refreshOutliner } from './outliner.js?v=0.23';
+import { loadEnvironmentFile, setEnvironmentBackground } from './environment.js?v=0.23';
+import { renderSnapshot } from './snapshot.js?v=0.23';
+import { renderScanUI, openScanCamera, stopScanCamera, captureScanPhoto, importScanPhotos, downloadScanPhotos, getBestScanPhotoFile, clearScan } from './scan.js?v=0.23';
+import { renderScannerUI, openScannerCamera, stopScannerCamera, captureScannerPhoto, startBurst, stopBurst, downloadScannerManifest, downloadScannerPhotos, clearScanner, sendScannerPayload } from './scanner.js?v=0.23';
+import { exportDetectedMeshesGLB, clearDetectedMeshes } from './ar.js?v=0.23';
+import { setBloomEnabled, setBloomStrength, getBloomState, isVFXReady } from './vfx.js?v=0.23';
 
 const $ = (id) => document.getElementById(id);
 // Enlace seguro: si falta un id, se deja constancia en #log en
@@ -249,6 +251,31 @@ export function initUI() {
   bind('scanUseBest', 'click', startScanGeneration);
   bind('scanImport', 'change', async (e) => { if (e.target.files?.length) await importScanPhotos(e.target.files); });
   renderScanUI();
+
+  // --- Escáner multi-vista y mapeo (v0.23) ---
+  bind('scannerOpenCamera', 'click', openScannerCamera);
+  bind('scannerStopCamera', 'click', stopScannerCamera);
+  bind('scannerCapture', 'click', async () => { await captureScannerPhoto(); });
+  bind('scannerBurst', 'click', startBurst);
+  bind('scannerStopBurst', 'click', stopBurst);
+  bind('scannerClear', 'click', clearScanner);
+  bind('scannerManifest', 'click', downloadScannerManifest);
+  bind('scannerDownload', 'click', downloadScannerPhotos);
+  bind('scannerSend', 'click', async () => {
+    const btn = $('scannerSend');
+    if (btn) btn.disabled = true;
+    try {
+      const result = await sendScannerPayload($('scannerEndpoint')?.value || '', $('scannerApiKey')?.value || '');
+      log(`Escáner: payload enviado. Respuesta del endpoint: ${String(result).slice(0, 300)}`);
+    } catch (err) {
+      log('Escáner: ' + (err?.message || err));
+    } finally {
+      if (btn) btn.disabled = false;
+    }
+  });
+  bind('exportMeshGLB', 'click', exportDetectedMeshesGLB);
+  bind('clearMeshGLB', 'click', clearDetectedMeshes);
+  renderScannerUI();
 
   // --- Pipeline IA de pago (opcional, v0.2) ---
   $('generateAI').onclick = async () => {

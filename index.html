@@ -3,16 +3,16 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Estudio 3D — v0.21 Escaneo de objeto</title>
-<link rel="stylesheet" href="styles.css?v=0.21">
+<title>Estudio 3D — v0.23 Fotogrametría y Mapeo</title>
+<link rel="stylesheet" href="styles.css?v=0.23">
 <script type="importmap">
 {"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/","@gradio/client":"https://cdn.jsdelivr.net/npm/@gradio/client/dist/index.min.js"}}
 </script>
 </head>
 <body>
 <header>
-<h1>Estudio 3D <span class="badge">v0.21 Escaneo de objeto</span></h1>
-<p>Escena, interfaz, importación/exportación, IA y timeline separados en módulos ES6. Generación gratuita por Hugging Face Spaces con token Read del usuario, guardado solo en su navegador, con errores visibles en el panel de registro. Las mallas inyectadas se normalizan a eje mayor 2, se centran en (0,0,0) y la cámara las encuadra al 80%. El Outliner lista la jerarquía y el inspector edita una sola sub-malla sin tocar su textura. El recuadro magenta se recrea tras la normalización y sigue a la malla al moverla con el gizmo. Ahora con iluminación HDRI (IBL) opcional, render final PNG con supersampling, post-procesamiento con Bloom, cache busting ?v=0.21 en todos los módulos, y AR WebXR con hit-test y gestos: en un móvil compatible, el botón AR coloca el modelo seleccionado sobre el suelo o una mesa real, y con dos dedos se escala (pinch) y se rota. Al abrir, un aviso indica si este teléfono puede usar AR y, si no puede, qué alternativa usar en el visor 3D, antes de pulsar el botón AR.</p>
+<h1>Estudio 3D <span class="badge">v0.23 Fotogrametría y Mapeo</span></h1>
+<p>Escena, interfaz, importación/exportación, IA y timeline separados en módulos ES6. Generación gratuita por Hugging Face Spaces con token Read del usuario, guardado solo en su navegador, con errores visibles en el panel de registro. Las mallas inyectadas se normalizan a eje mayor 2, se centran en (0,0,0) y la cámara las encuadra al 80%. El Outliner lista la jerarquía y el inspector edita una sola sub-malla sin tocar su textura. El recuadro magenta se recrea tras la normalización y sigue a la malla al moverla con el gizmo. Ahora con iluminación HDRI (IBL) opcional, render final PNG con supersampling, post-procesamiento con Bloom, cache busting ?v=0.23 en todos los módulos, y AR WebXR con hit-test y gestos: en un móvil compatible, el botón AR coloca el modelo seleccionado sobre el suelo o una mesa real, y con dos dedos se escala (pinch) y se rota. Al abrir, un aviso indica si este teléfono puede usar AR y, si no puede, qué alternativa usar en el visor 3D, antes de pulsar el botón AR.</p>
 </header>
 <div id="arCompat" data-status="checking">Comprobando si este teléfono puede usar AR…</div>
 <div class="layout">
@@ -98,6 +98,29 @@
 </div>
 <p class="small">Las fotos viven solo en esta página: si la cierras sin descargarlas, se pierden. Generar 3D gratis usa el Espacio y el token HF de la sección anterior, y el modelo resultante se añade a la escena para colocarlo en AR.</p>
 
+<h2>Escáner multi-vista y Mapeo espacial</h2>
+<p class="small">Segunda fase de escaneo: serie completa para un endpoint externo de reconstrucción 3D (no se procesa fotogrametría en el navegador). La cámara pide alta resolución ideal (2560×1440, si el teléfono no llega, usa la máxima disponible). La ráfaga captura 1 foto cada 2 s hasta 30, para que camines despacio alrededor del objeto sin moverlo.</p>
+<video id="scannerVideo" playsinline muted style="display:none;width:100%;border-radius:10px"></video>
+<div class="row">
+<button id="scannerOpenCamera">Abrir cámara escáner</button><button id="scannerCapture">Capturar foto</button><button id="scannerStopCamera">Cerrar cámara</button>
+</div>
+<div class="row">
+<button id="scannerBurst">Iniciar ráfaga 30</button><button id="scannerStopBurst">Detener ráfaga</button><button id="scannerClear">Limpiar escáner</button>
+</div>
+<div id="scannerCount" class="small">Sin fotos de escáner todavía.</div>
+<label>Endpoint REST externo de reconstrucción 3D (opcional, solo si tienes uno)</label>
+<input type="text" id="scannerEndpoint" placeholder="https://tu-servidor/ejemplo/reconstruir">
+<label>Clave de API del endpoint (solo en esta sesión, no se guarda)</label>
+<input type="password" id="scannerApiKey" placeholder="pega tu clave aquí" autocomplete="off">
+<div class="row">
+<button id="scannerManifest">Descargar manifiesto</button><button id="scannerDownload">Descargar fotos</button><button id="scannerSend">Enviar payload a endpoint</button>
+</div>
+<p class="small">Sin endpoint, no se envía nada: el flujo es preparar y descargar. El manifiesto (scan-manifest.json) lista cada foto con orden, tamaño y fecha, para enviarlo junto a los archivos photo-*.jpg en el mismo orden.</p>
+<p class="small">Mapeo espacial: en AR, la app pide mesh-detection y depth-sensing como opcionales. Si tu teléfono/navegador las expone, las paredes y el suelo detectados se dibujan como malla wireframe cian en tiempo real. Si no las expone (lo más probable sin LiDAR/ToF ni flags activados), la sesión sigue normal con hit-test y pellizco, y el Registro lo dirá al salir. La malla queda en la escena al salir de AR para exportarla aquí.</p>
+<div class="row">
+<button id="exportMeshGLB">Exportar malla del entorno (.glb)</button><button id="clearMeshGLB">Limpiar malla del entorno</button>
+</div>
+
 <h2>Objeto seleccionado</h2>
 <div id="selName" class="small">Ninguno. Haz clic en un objeto.</div>
 <div class="row">
@@ -158,6 +181,6 @@
     }, 10000);
   });
 </script>
-<script type="module" src="js/main.js?v=0.21"></script>
+<script type="module" src="js/main.js?v=0.23"></script>
 </body>
 </html>

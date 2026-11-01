@@ -1,13 +1,13 @@
 import * as THREE from 'three';
-import { initScene, renderer, scene, camera, controls, resize, syncSelectionHelper } from './scene.js?v=0.21';
-import { state, log } from './store.js?v=0.21';
-import { initUI } from './ui.js?v=0.21';
-import { initVFX, renderVFX, syncVFXSize, isVFXReady, getBloomState } from './vfx.js?v=0.21';
-import { updateEffects, addPrimitive } from './effects.js?v=0.21';
-import { updateTracks } from './timeline.js?v=0.21';
+import { initScene, renderer, scene, camera, controls, resize, syncSelectionHelper } from './scene.js?v=0.23';
+import { state, log } from './store.js?v=0.23';
+import { initUI } from './ui.js?v=0.23';
+import { initVFX, renderVFX, syncVFXSize, isVFXReady, getBloomState } from './vfx.js?v=0.23';
+import { updateEffects, addPrimitive } from './effects.js?v=0.23';
+import { updateTracks } from './timeline.js?v=0.23';
 import { ARButton } from 'three/addons/webxr/ARButton.js';
-import { initAR, updateARHitTest, isARSessionActive } from './ar.js?v=0.21';
-import { initARCompat } from './ar-compat.js?v=0.21';
+import { initAR, updateARHitTest, updateDetectedMeshes, isARSessionActive } from './ar.js?v=0.23';
+import { initARCompat } from './ar-compat.js?v=0.23';
 
 function start() {
   try {
@@ -40,7 +40,13 @@ function start() {
       const arOverlay = document.getElementById('arOverlay');
       document.body.appendChild(ARButton.createButton(renderer, {
         requiredFeatures: ['hit-test'],
-        optionalFeatures: ['dom-overlay'],
+        // v0.23: mapeo espacial opcional. 'mesh-detection' es el
+        // nombre estándar; 'mesh-tracking' se pide también por
+        // compatibilidad con la especificación del usuario, y
+        // 'depth-sensing' por profundidad si el hardware la da.
+        // Las opcionales no soportadas se ignoran: la sesión no
+        // falla si el teléfono no tiene LiDAR/ToF ni mesh.
+        optionalFeatures: ['dom-overlay', 'mesh-detection', 'mesh-tracking', 'depth-sensing'],
         domOverlay: { root: arOverlay || document.body },
       }));
       initAR(renderer, scene);
@@ -75,6 +81,10 @@ function start() {
       if (!isARSessionActive()) controls.update();
       // v0.13: hit-testing cada frame, con el XRFrame de la sesión.
       updateARHitTest(frame);
+      // v0.23: mallas detectadas cada frame, si el dispositivo
+      // las expone (si no, la función registra una sola vez que
+      // no están disponibles y no hace nada más).
+      if (frame && isARSessionActive()) updateDetectedMeshes(frame);
       // v0.8: sincronización por frame del BoxHelper, además del
       // evento 'change' del gizmo, para que siga a la malla en vivo.
       syncSelectionHelper();
@@ -95,8 +105,8 @@ function start() {
     updateTracks();
     // v0.16: log de inicio con la versión y el estado AR/VFX.
     log(isVFXReady()
-      ? `Listo v0.21. Motor VFX activo, AR WebXR listo (botón AR con hit-test y colocación por toque; pellizco y botones + / - en AR, aviso de compatibilidad AR al abrir). (Bloom ${getBloomState().enabled ? 'activo' : 'inactivo'}, strength ${getBloomState().strength}). Añade objetos, importa un modelo o genera uno gratis con Hugging Face (necesita tu token Read, guardado solo en tu navegador).`
-      : 'Listo v0.21. Motor VFX no disponible, render directo, AR WebXR listo (botón AR con hit-test y colocación por toque; pellizco y botones + / - en AR, aviso de compatibilidad AR al abrir). Añade objetos, importa un modelo o genera uno gratis con Hugging Face (necesita tu token Read, guardado solo en tu navegador).');
+      ? `Listo v0.23. Motor VFX activo, AR WebXR listo (botón AR con hit-test, pellizco y botones + / - en AR, mapeo espacial opcional (mesh-detection/depth-sensing), aviso de compatibilidad AR al abrir). (Bloom ${getBloomState().enabled ? 'activo' : 'inactivo'}, strength ${getBloomState().strength}). Añade objetos, importa un modelo o genera uno gratis con Hugging Face (necesita tu token Read, guardado solo en tu navegador).`
+      : 'Listo v0.23. Motor VFX no disponible, render directo, AR WebXR listo (botón AR con hit-test, pellizco y botones + / - en AR, mapeo espacial opcional (mesh-detection/depth-sensing), aviso de compatibilidad AR al abrir). Añade objetos, importa un modelo o genera uno gratis con Hugging Face (necesita tu token Read, guardado solo en tu navegador).');
     window.__estudioReady = true;
     renderer.setAnimationLoop(animate);
   } catch (err) {

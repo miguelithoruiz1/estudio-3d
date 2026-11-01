@@ -1,4 +1,4 @@
-# Estudio 3D — v0.21 Escaneo de objeto
+# Estudio 3D — v0.23 Fotogrametría y Mapeo
 
 ## Arquitectura
 
@@ -54,7 +54,16 @@ test/test-v18.mjs # Test Node de la v0.18 (ajuste a 30 cm + restaurar, 1 unidad 
 test/test-v19.mjs # Test Node de la v0.19 (dom-overlay corregido, pellizco + giro)
 test/test-v20.mjs # Test Node de la v0.20 (botones + / − en AR, pellizco con texto de escala, tamaños predefinidos)
 test/test-v21.mjs # Test Node de la v0.21 (escaneo fase 1: cámara, 8 ángulos, miniaturas, descarga, mejor foto a 3D)
+test/test-v23.mjs # Test Node de la v0.23 (scanner ráfaga 30 + payload, mapeo WebXR + .glb)
 ```
+
+## v0.23 Fotogrametría y Mapeo: escáner multi-vista + malla del entorno
+
+- Versión: el paso 5 de la especificación pedía ?v=0.16, pero v0.16 ya existe (AR sin atasco, 2026-11-01). Se publicó como v0.23, que es la versión pedida en el cierre del mensaje (se salta v0.22 en la numeración, queda registrado aquí para no confundir).
+- Escáner multi-vista (js/scanner.js, distinto de scan.js v0.21): cámara trasera con getUserMedia en alta resolución ideal (2560×1440, si el teléfono no llega usa su máxima), captura foto a foto o ráfaga controlada de 30 fotos (1 cada 2 s, para caminar despacio alrededor del objeto sin moverlo), archivos Blob/File reales, manifiesto scan-manifest.json y payload FormData (manifiesto + photos) listo para un endpoint REST externo de reconstrucción 3D. Sin endpoint escrito por el usuario, no se envía nada: solo preparar y descargar. La clave del endpoint, si se escribe, se usa solo en ese fetch y no se guarda.
+- Mapeo espacial (ar.js + main.js): la sesión AR pide como opcionales 'mesh-detection' (nombre estándar WebXR; 'mesh-tracking' se pide también por compatibilidad con la especificación), 'depth-sensing' y dom-overlay. Las opcionales no soportadas se ignoran, así que la sesión no falla sin LiDAR/ToF. Si el dispositivo expone frame.detectedMeshes, cada XRMesh se dibuja en tiempo real como wireframe cian (BufferGeometry desde vertices/indices, pose desde meshSpace) y queda en un grupo que sobrevive a sessionend. Si no lo expone, el Registro lo dice una sola vez por sesión y todo lo demás (hit-test, pellizco, botones) sigue igual.
+- Persistencia: botón "Exportar malla del entorno (.glb)" (GLTFExporter sobre el grupo de mallas, no sobre toda la escena) para usarlo en motores externos, y "Limpiar malla del entorno". snapshot.js sigue siendo el render PNG; no se mezcló con la exportación de malla.
+- Prueba real pendiente en el teléfono del usuario: ráfaga de 30, envío a su endpoint (si tiene uno) y, sobre todo, si su teléfono expone mesh-detection o si el Registro dice que no está disponible.
 
 ## v0.21 Escaneo de objeto (fase 1): captura guiada, no fotogrametría
 

@@ -53,8 +53,117 @@
 //   pantalla del móvil durante la inmersión.
 
 import * as THREE from 'three';
-import { scene, gridHelper, refreshSelectionHelper } from './scene.js?v=0.21';
-import { state, log } from './store.js?v=0.21';
+import { GLTFExporter } from 'three/addons/exporters/GLTFExporter.js';
+import { scene, gridHelper, refreshSelectionHelper } from './scene.js?v=0.23';
+import { state, log } from './store.js?v=0.23';
+
+// v0.23: Mapeo espacial (WebXR Mesh Detection, experimental).
+// Nombre estándar en WebXR: 'mesh-detection', no 'mesh-tracking'.
+// Para no romper la sesión si un nombre no existe, ARButton pide
+// ambos como opcionales junto a 'depth-sensing': las opcionales
+// no soportadas se ignoran y la sesión sigue con hit-test.
+// En la práctica, mesh-detection exige un dispositivo y un
+// navegador que lo expongan (a menudo con LiDAR/ToF o con
+// ARCore con profundidad, y a veces detrás de flags). Si no está,
+// frame.detectedMeshes es undefined y la app lo registra una
+// sola vez por sesión, sin romper nada: el mapeo queda como
+// "no disponible en este dispositivo", no como un fallo.
+// Cada XRMesh se dibuja como wireframe cian en tiempo real y
+// queda en meshGroup, que sobrevive a sessionend para poder
+// exportarlo a .glb desde la interfaz (fuera de la sesión).
+let meshGroup = null;
+const meshMap = new Map();
+let meshSupportLogged = false;
+
+function getMeshGroup(targetScene) {
+  if (!meshGroup) {
+    meshGroup = new THREE.Group();
+    meshGroup.name = 'Malla del entorno (WebXR)';
+    targetScene.add(meshGroup);
+  }
+  return meshGroup;
+}
+
+export function getDetectedMeshCount() { return meshMap.size; }
+
+export function clearDetectedMeshes({ silent = false } = {}) {
+  const had = meshMap.size;
+  if (meshGroup) {
+    for (const entry of meshMap.values()) {
+      meshGroup.remove(entry.mesh);
+      entry.mesh.geometry.dispose();
+      entry.mesh.material.dispose();
+    }
+  }
+  meshMap.clear();
+  if (had && !silent) log('Mapeo: malla del entorno limpiada.');
+}
+
+export function exportDetectedMeshesGLB() {
+  if (!meshGroup || meshMap.size === 0) {
+    log('Mapeo: no hay malla del entorno para exportar. Entra a AR en un dispositivo con mesh-detection y sal de la sesión para exportar.');
+    return;
+  }
+  new GLTFExporter().parse(meshGroup, (result) => {
+    const blob = result instanceof ArrayBuffer
+      ? new Blob([result], { type: 'model/gltf-binary' })
+      : new Blob([JSON.stringify(result)], { type: 'model/gltf+json' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = 'entorno-detectado.glb';
+    a.click();
+    log(`Mapeo: entorno exportado a entorno-detectado.glb (${meshMap.size} malla(s) detectada(s)). Úsalo en motores externos como cualquier .glb.`);
+  }, (err) => log('Mapeo: error al exportar .glb: ' + (err?.message || err)), { binary: true });
+}
+
+export function updateDetectedMeshes(frame) {
+  if (!frame || !xrRenderer) return;
+  if (!frame.detectedMeshes) {
+    if (!meshSupportLogged) {
+      meshSupportLogged = true;
+      log('Mapeo: este dispositivo/navegador no expone detectedMeshes en esta sesión (mesh-detection no disponible o sin activar). La sesión sigue con hit-test, pellizco y botones.');
+    }
+    return;
+  }
+  const referenceSpace = xrRenderer.xr.getReferenceSpace();
+  if (!referenceSpace) return;
+  const group = getMeshGroup(scene);
+  const seen = new Set();
+  for (const xrMesh of frame.detectedMeshes) {
+    seen.add(xrMesh);
+    const pose = frame.getPose(xrMesh.meshSpace, referenceSpace);
+    if (!pose) continue;
+    let entry = meshMap.get(xrMesh);
+    if (!entry) {
+      const geometry = new THREE.BufferGeometry();
+      geometry.setAttribute('position', new THREE.BufferAttribute(xrMesh.vertices, 3));
+      if (xrMesh.indices) geometry.setIndex(new THREE.BufferAttribute(xrMesh.indices, 1));
+      const material = new THREE.MeshBasicMaterial({ color: 0x00e5ff, wireframe: true, transparent: true, opacity: 0.5, side: THREE.DoubleSide });
+      const mesh = new THREE.Mesh(geometry, material);
+      group.add(mesh);
+      entry = { mesh, lastChangedTime: xrMesh.lastChangedTime };
+      meshMap.set(xrMesh, entry);
+    } else if (entry.lastChangedTime !== xrMesh.lastChangedTime) {
+      entry.mesh.geometry.setAttribute('position', new THREE.BufferAttribute(xrMesh.vertices, 3));
+      if (xrMesh.indices) entry.mesh.geometry.setIndex(new THREE.BufferAttribute(xrMesh.indices, 1));
+      entry.mesh.geometry.attributes.position.needsUpdate = true;
+      if (entry.mesh.geometry.index) entry.mesh.geometry.index.needsUpdate = true;
+      entry.lastChangedTime = xrMesh.lastChangedTime;
+    }
+    const m = pose.transform.matrix;
+    entry.mesh.position.set(m[12], m[13], m[14]);
+    entry.mesh.quaternion.setFromRotationMatrix(new THREE.Matrix4().fromArray(m));
+    entry.mesh.updateMatrixWorld(true);
+  }
+  for (const [xrMesh, entry] of meshMap) {
+    if (!seen.has(xrMesh)) {
+      group.remove(entry.mesh);
+      entry.mesh.geometry.dispose();
+      entry.mesh.material.dispose();
+      meshMap.delete(xrMesh);
+    }
+  }
+}
 
 let xrRenderer = null;
 let reticle = null;
@@ -283,6 +392,12 @@ function restorePanelsAfterAR() {
 }
 
 function onSessionStart() {
+  // v0.23: la malla de una sesión anterior pertenece a otro
+  // espacio de referencia, así que se limpia al iniciar una
+  // nueva sesión (exporta antes de volver a entrar si la
+  // quieres guardar).
+  clearDetectedMeshes({ silent: true });
+  meshSupportLogged = false;
   // v0.19: activar toques y texto solo ahora. Antes de la
   // sesión la capa ya era visible pero con pointer-events:none
   // y texto en opacity 0, para no bloquear el visor.
