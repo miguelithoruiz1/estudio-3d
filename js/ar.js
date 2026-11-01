@@ -1,5 +1,11 @@
 // v0.13: Mapeo Espacial y AR (WebXR, hit-test).
 // v0.14: Interacción Espacial y Gestos AR (DOM Overlay + multitáctil).
+// v0.17: Sin dom-overlay (ver main.js). El texto de ayuda en
+// sesión de v0.16 solo se veía con dom-overlay, así que en
+// v0.17 no se verá dentro de la sesión; en su lugar, los
+// mensajes de colocación quedan en el Registro, visible al
+// salir de AR. Colocar por 'select' y el respaldo frente a
+// cámara de v0.16 siguen activos.
 // v0.16: Diagnóstico AR en sesión. Antes, si la detección de
 // superficie (hit-test) fallaba, la sesión quedaba en silencio:
 // sin retículo, tocar no colocaba nada y la pantalla parecía
@@ -46,8 +52,8 @@
 //   pantalla del móvil durante la inmersión.
 
 import * as THREE from 'three';
-import { scene, gridHelper, refreshSelectionHelper } from './scene.js?v=0.16';
-import { state, log } from './store.js?v=0.16';
+import { scene, gridHelper, refreshSelectionHelper } from './scene.js?v=0.17';
+import { state, log } from './store.js?v=0.17';
 
 let xrRenderer = null;
 let reticle = null;

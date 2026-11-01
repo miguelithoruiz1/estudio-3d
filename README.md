@@ -1,4 +1,4 @@
-# Estudio 3D — v0.16 AR sin atasco
+# Estudio 3D — v0.17 Cámara AR sin capa
 
 ## Arquitectura
 
@@ -49,7 +49,14 @@ test/test-v14.mjs # Test Node de la v0.14 (dom-overlay, pinch, twist, clamp, cac
 js/ar-compat.js # Aviso AR al abrir: HTTPS + immersive-ar, alternativa visor 3D (v0.15)
 test/test-v15.mjs # Test Node de la v0.15 (aviso AR, ramas compatible/no compatible/sin HTTPS)
 test/test-v16.mjs # Test Node de la v0.16 (estado AR en sesión, reintento hit-test, respaldo frente a cámara)
+test/test-v17.mjs # Test Node de la v0.17 (sin dom-overlay, hit-test + select + respaldo)
 ```
+
+## v0.17 Cámara AR sin capa: quitar dom-overlay
+
+- En el teléfono del usuario, con dom-overlay la sesión abría (indicador de cámara activo) pero la cámara no se veía y el texto de ayuda tampoco aparecía, solo pantalla negra y el aviso de pantalla completa.
+- v0.17 pide la sesión solo con hit-test, sin dom-overlay, para que ninguna capa DOM quede por encima de la cámara. Colocar por toque (select) y el respaldo frente a cámara de v0.16 siguen activos. El pinch y el twist en AR quedan pausados en esta versión, porque dependían de dom-overlay; lo primero es que la cámara abra.
+- Prueba real en el teléfono del usuario pendiente.
 
 ## v0.16 AR sin atasco: estado en sesión y colocación de respaldo
 

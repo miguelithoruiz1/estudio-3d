@@ -1,13 +1,13 @@
 import * as THREE from 'three';
-import { initScene, renderer, scene, camera, controls, resize, syncSelectionHelper } from './scene.js?v=0.16';
-import { state, log } from './store.js?v=0.16';
-import { initUI } from './ui.js?v=0.16';
-import { initVFX, renderVFX, syncVFXSize, isVFXReady, getBloomState } from './vfx.js?v=0.16';
-import { updateEffects, addPrimitive } from './effects.js?v=0.16';
-import { updateTracks } from './timeline.js?v=0.16';
+import { initScene, renderer, scene, camera, controls, resize, syncSelectionHelper } from './scene.js?v=0.17';
+import { state, log } from './store.js?v=0.17';
+import { initUI } from './ui.js?v=0.17';
+import { initVFX, renderVFX, syncVFXSize, isVFXReady, getBloomState } from './vfx.js?v=0.17';
+import { updateEffects, addPrimitive } from './effects.js?v=0.17';
+import { updateTracks } from './timeline.js?v=0.17';
 import { ARButton } from 'three/addons/webxr/ARButton.js';
-import { initAR, updateARHitTest, isARSessionActive } from './ar.js?v=0.16';
-import { initARCompat } from './ar-compat.js?v=0.16';
+import { initAR, updateARHitTest, isARSessionActive } from './ar.js?v=0.17';
+import { initARCompat } from './ar-compat.js?v=0.17';
 
 function start() {
   try {
@@ -24,20 +24,22 @@ function start() {
     // sesión. En escritorio sin AR, el botón muestra
     // "AR NOT SUPPORTED": esperado, no un fallo. No fatal: si
     // ARButton falla, la app sigue funcionando sin AR.
-    // v0.14: dom-overlay opcional. La raíz es el contenedor
-    // #arOverlay dedicado (no document.body entero, que incluye
-    // paneles y canvas), para capturar toques tradicionales sobre
-    // la vista AR sin que el navegador los bloquee. Si el
-    // contenedor faltara, se usa document.body como respaldo.
-    // dom-overlay es opcional: sin soporte, la sesión sigue con
-    // hit-test y el 'select' de v0.13 como respaldo.
+    // v0.17: SIN dom-overlay. En el teléfono del usuario, con
+    // dom-overlay la sesión abría (indicador de cámara activo)
+    // pero la cámara no se veía y el texto de ayuda tampoco
+    // aparecía, solo pantalla negra y el aviso de pantalla
+    // completa. Quitar esa capa es el cambio diagnóstico: la
+    // cámara de WebXR queda sin ninguna capa DOM por encima.
+    // Colocar sigue funcionando por 'select' de WebXR (toque)
+    // y por el respaldo frente a cámara de v0.16. El pinch y
+    // el twist táctil en AR quedan pausados en esta versión:
+    // dependían de dom-overlay, y lo primero es que la cámara
+    // abra. Si con esto la cámara abre, se podrá reintroducir
+    // la capa con otra forma.
     try {
       renderer.xr.enabled = true;
-      const arOverlay = document.getElementById('arOverlay');
       document.body.appendChild(ARButton.createButton(renderer, {
         requiredFeatures: ['hit-test'],
-        optionalFeatures: ['dom-overlay'],
-        domOverlay: { root: arOverlay || document.body },
       }));
       initAR(renderer, scene);
     } catch (arErr) {
@@ -91,8 +93,8 @@ function start() {
     updateTracks();
     // v0.16: log de inicio con la versión y el estado AR/VFX.
     log(isVFXReady()
-      ? `Listo v0.16. Motor VFX activo, AR WebXR listo (botón AR con hit-test y gestos multitáctiles, aviso de compatibilidad AR al abrir). (Bloom ${getBloomState().enabled ? 'activo' : 'inactivo'}, strength ${getBloomState().strength}). Añade objetos, importa un modelo o genera uno gratis con Hugging Face (necesita tu token Read, guardado solo en tu navegador).`
-      : 'Listo v0.16. Motor VFX no disponible, render directo, AR WebXR listo (botón AR con hit-test y gestos multitáctiles, aviso de compatibilidad AR al abrir). Añade objetos, importa un modelo o genera uno gratis con Hugging Face (necesita tu token Read, guardado solo en tu navegador).');
+      ? `Listo v0.17. Motor VFX activo, AR WebXR listo (botón AR con hit-test y colocación por toque; pinch en AR pausado en v0.17 para que la cámara abra sin capa, aviso de compatibilidad AR al abrir). (Bloom ${getBloomState().enabled ? 'activo' : 'inactivo'}, strength ${getBloomState().strength}). Añade objetos, importa un modelo o genera uno gratis con Hugging Face (necesita tu token Read, guardado solo en tu navegador).`
+      : 'Listo v0.17. Motor VFX no disponible, render directo, AR WebXR listo (botón AR con hit-test y colocación por toque; pinch en AR pausado en v0.17 para que la cámara abra sin capa, aviso de compatibilidad AR al abrir). Añade objetos, importa un modelo o genera uno gratis con Hugging Face (necesita tu token Read, guardado solo en tu navegador).');
     window.__estudioReady = true;
     renderer.setAnimationLoop(animate);
   } catch (err) {

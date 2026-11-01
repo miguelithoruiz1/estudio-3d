@@ -1,5 +1,5 @@
-import { loadGLBFromURL } from './loaders.js?v=0.16';
-import { log } from './store.js?v=0.16';
+import { loadGLBFromURL } from './loaders.js?v=0.17';
+import { log } from './store.js?v=0.17';
 
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 

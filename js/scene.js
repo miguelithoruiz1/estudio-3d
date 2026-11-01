@@ -2,7 +2,7 @@ import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { TransformControls } from 'three/addons/controls/TransformControls.js';
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
-import { state, log, notifyObjectsChange } from './store.js?v=0.16';
+import { state, log, notifyObjectsChange } from './store.js?v=0.17';
 
 export let renderer, scene, camera, controls, transform, gridHelper;
 export let initialEnvironment = null;
